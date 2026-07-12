@@ -1,0 +1,23 @@
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Python / Backend
+backend/.env
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/*/__pycache__/
+backend/.pytest_cache/
+backend/venv/
+backend/.venv/
+backend/env/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+*.log
+Thumbs.db
+db.sqlite3

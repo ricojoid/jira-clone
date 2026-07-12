@@ -1,0 +1,31 @@
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    # Database
+    DATABASE_SERVER: str = "localhost"
+    DATABASE_NAME: str = "jira_clone"
+    DATABASE_DRIVER: str = "ODBC Driver 17 for SQL Server"
+
+    # JWT
+    SECRET_KEY: str = "your-super-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
+
+    # CORS
+    FRONTEND_URL: str = "http://localhost:5173"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return (
+            f"mssql+pyodbc://@{self.DATABASE_SERVER}/{self.DATABASE_NAME}"
+            f"?driver={self.DATABASE_DRIVER.replace(' ', '+')}"
+            f"&trusted_connection=yes"
+        )
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()
