@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jira_backend
+    restart: always
+    environment:
+      - CUSTOM_DATABASE_URL=sqlite:////app/data/jira.db
+      - SECRET_KEY=your-super-secret-key-change-this-in-production
+      - FRONTEND_URL=http://localhost
+    volumes:
+      - jira_data:/app/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jira_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  jira_data:

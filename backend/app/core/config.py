@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     DATABASE_SERVER: str = r"G07IDXNFID02063\SQLEXPRESS"
     DATABASE_NAME: str = "jira_clone"
     DATABASE_DRIVER: str = "ODBC Driver 17 for SQL Server"
+    CUSTOM_DATABASE_URL: Optional[str] = None
 
     # JWT
     SECRET_KEY: str = "your-super-secret-key-change-in-production"
@@ -18,6 +19,8 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        if self.CUSTOM_DATABASE_URL:
+            return self.CUSTOM_DATABASE_URL
         return (
             f"mssql+pyodbc://@{self.DATABASE_SERVER}/{self.DATABASE_NAME}"
             f"?driver={self.DATABASE_DRIVER.replace(' ', '+')}"
