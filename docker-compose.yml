@@ -6,11 +6,12 @@ services:
     container_name: jira_backend
     restart: always
     environment:
-      - CUSTOM_DATABASE_URL=sqlite:////app/data/jira.db
+      - DATABASE_SERVER=43.157.212.14
+      - DATABASE_NAME=jira_clone
+      - DATABASE_USER=sa
+      - DATABASE_PASSWORD=PasswordKamu123!
       - SECRET_KEY=your-super-secret-key-change-this-in-production
       - FRONTEND_URL=http://localhost
-    volumes:
-      - jira_data:/app/data
     ports:
       - "8000:8000"
 
@@ -24,6 +25,3 @@ services:
       - "80:80"
     depends_on:
       - backend
-
-volumes:
-  jira_data:
