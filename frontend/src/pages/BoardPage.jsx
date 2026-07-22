@@ -42,7 +42,8 @@ export default function BoardPage() {
       setLoading(true);
 
       const projRes = await projectApi.get(projectId);
-      setProject(projRes.data);
+      const projData = projRes.data;
+      setProject(projData);
 
       const boardRes = await boardApi.listByProject(projectId);
       const boardData = Array.isArray(boardRes.data) ? boardRes.data[0] : boardRes.data;
@@ -130,16 +131,32 @@ export default function BoardPage() {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading board...</div>;
   }
 
+  const isWaterfall = (project?.sdlc_type || '').toLowerCase() === 'waterfall';
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            {project?.name || 'Board'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+              {project?.name || 'Board'}
+            </h2>
+            <span
+              className="badge"
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                backgroundColor: isWaterfall ? '#fef3c7' : '#e0e7ff',
+                color: isWaterfall ? '#b45309' : '#4338ca',
+                border: `1px solid ${isWaterfall ? '#fcd34d' : '#c7d2fe'}`,
+              }}
+            >
+              {(project?.sdlc_type || 'scrum').toUpperCase()}
+            </span>
+          </div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
-            Kanban Board
+            {isWaterfall ? 'Waterfall Phase Board (UR ➔ DR ➔ PU ➔ ST ➔ UT ➔ TR ➔ IP ➔ MA)' : 'Kanban Board'}
           </div>
         </div>
 

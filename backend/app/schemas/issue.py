@@ -84,6 +84,7 @@ class IssueBrief(BaseModel):
     story_points: Optional[int] = None
     position: Optional[int] = 0
     project_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     assignee_id: Optional[int] = None
     assignee: Optional[UserBrief] = None
     labels: Optional[List[LabelResponse]] = []

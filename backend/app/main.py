@@ -7,17 +7,30 @@ from app.models.user import User
 from app.core.security import get_password_hash
 import app.models
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
+# Create all tables safely on startup
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as err:
+    print("Database table creation warning:", err)
 
 def _auto_migrate_and_seed():
     try:
-        from sqlalchemy import text
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+
         with engine.connect() as conn:
-            check_sql = text("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'users' AND COLUMN_NAME = 'role'")
-            if not conn.execute(check_sql).fetchone():
-                conn.execute(text("ALTER TABLE users ADD role VARCHAR(50) NOT NULL DEFAULT 'pm'"))
-                conn.commit()
+            if 'users' in tables:
+                user_cols = [c['name'] for c in inspector.get_columns('users')]
+                if 'role' not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD role VARCHAR(50) DEFAULT 'pm'"))
+                    conn.commit()
+
+            if 'projects' in tables:
+                proj_cols = [c['name'] for c in inspector.get_columns('projects')]
+                if 'sdlc_type' not in proj_cols:
+                    conn.execute(text("ALTER TABLE projects ADD sdlc_type VARCHAR(20) DEFAULT 'scrum'"))
+                    conn.commit()
     except Exception as e:
         print("Auto-migration warning:", e)
 

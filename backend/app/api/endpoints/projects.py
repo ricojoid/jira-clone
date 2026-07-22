@@ -6,6 +6,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.board import Board, BoardColumn
+from app.models.sprint import Sprint
 from app.schemas.project import (
     ProjectCreate,
     ProjectResponse,
@@ -67,11 +68,16 @@ def create_project(
     if db.query(Project).filter(Project.key == project_data.key.upper()).first():
         raise HTTPException(status_code=400, detail="Project key already exists")
 
+    sdlc_type = (project_data.sdlc_type or "scrum").lower()
+    if sdlc_type not in ["scrum", "waterfall"]:
+        sdlc_type = "scrum"
+
     project = Project(
         name=project_data.name,
         key=project_data.key.upper(),
         description=project_data.description,
         icon=project_data.icon,
+        sdlc_type=sdlc_type,
         owner_id=current_user.id,
     )
     db.add(project)
@@ -96,6 +102,21 @@ def create_project(
     ]
     for col in default_columns:
         db.add(BoardColumn(board_id=board.id, **col))
+
+    # If Waterfall project, auto-seed the 8 SDLC phases as phase records
+    if sdlc_type == "waterfall":
+        waterfall_phases = [
+            ("UR - User Requirement", "User Requirement phase deliverables and specification"),
+            ("DR - Design Review", "Architecture and system design review phase"),
+            ("PU - Production Update", "Production preparation and deployment update phase"),
+            ("ST - System Testing", "System integration and automated testing phase"),
+            ("UT - User Testing", "User acceptance testing (UAT) phase"),
+            ("TR - Training", "User and operational training phase"),
+            ("IP - Implementation", "Go-live implementation and rollout phase"),
+            ("MA - Maintenance", "Post-implementation support and maintenance phase"),
+        ]
+        for name, goal in waterfall_phases:
+            db.add(Sprint(project_id=project.id, name=name, goal=goal, status="planned"))
 
     db.commit()
     db.refresh(project)

@@ -13,6 +13,7 @@ class Project(Base):
     description = Column(Text, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     icon = Column(String(50), default="folder")
+    sdlc_type = Column(String(20), default="scrum")  # scrum or waterfall
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,

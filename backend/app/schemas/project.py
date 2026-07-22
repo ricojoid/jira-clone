@@ -10,6 +10,7 @@ class ProjectBase(BaseModel):
     key: str
     description: Optional[str] = None
     icon: Optional[str] = "folder"
+    sdlc_type: Optional[str] = "scrum"
 
 
 class ProjectCreate(ProjectBase):
@@ -20,11 +21,12 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     icon: Optional[str] = None
+    sdlc_type: Optional[str] = None
 
 
 class ProjectResponse(ProjectBase):
     id: int
-    owner_id: int
+    owner_id: Optional[int] = None
     owner: Optional[UserBrief] = None
     created_at: datetime
     updated_at: datetime
@@ -38,6 +40,7 @@ class ProjectBrief(BaseModel):
     name: str
     key: str
     icon: Optional[str] = None
+    sdlc_type: Optional[str] = "scrum"
 
     class Config:
         from_attributes = True

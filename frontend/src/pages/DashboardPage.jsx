@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   // Modal State
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', key: '', description: '' });
+  const [form, setForm] = useState({ name: '', key: '', description: '', sdlc_type: 'scrum' });
   const [creating, setCreating] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -122,10 +122,11 @@ export default function DashboardPage() {
         name: form.name.trim(),
         key: form.key || generateKey(form.name),
         description: form.description.trim(),
+        sdlc_type: form.sdlc_type || 'scrum',
       });
       toast.success('Project created successfully');
       setDialogOpen(false);
-      setForm({ name: '', key: '', description: '' });
+      setForm({ name: '', key: '', description: '', sdlc_type: 'scrum' });
       fetchData();
     } catch (err) {
       toast.error(err?.response?.data?.detail ?? 'Failed to create project');
@@ -331,8 +332,22 @@ export default function DashboardPage() {
                             {p.name?.slice(0, 2).toUpperCase() ?? 'P'}
                           </div>
                           <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {p.name}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {p.name}
+                              </span>
+                              <span
+                                className="badge"
+                                style={{
+                                  fontSize: '0.625rem',
+                                  fontWeight: 800,
+                                  backgroundColor: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fef3c7' : '#e0e7ff',
+                                  color: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#b45309' : '#4338ca',
+                                  border: `1px solid ${(p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fcd34d' : '#c7d2fe'}`,
+                                }}
+                              >
+                                {(p.sdlc_type || 'scrum').toUpperCase()}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -496,6 +511,51 @@ export default function DashboardPage() {
             onChange={handleNameChange}
             autoFocus
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">SDLC Methodology *</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 4 }}>
+            {/* Option 1: Scrum */}
+            <div
+              onClick={() => setForm((p) => ({ ...p, sdlc_type: 'scrum' }))}
+              style={{
+                padding: 14,
+                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${form.sdlc_type === 'scrum' ? '#dc2626' : 'var(--border-color)'}`,
+                backgroundColor: form.sdlc_type === 'scrum' ? '#fef2f2' : 'var(--bg-app)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: 2 }}>
+                ⚡ Scrum (Sprint)
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                Agile sprints with To Do, In Progress, In Review & Done columns.
+              </div>
+            </div>
+
+            {/* Option 2: Waterfall */}
+            <div
+              onClick={() => setForm((p) => ({ ...p, sdlc_type: 'waterfall' }))}
+              style={{
+                padding: 14,
+                borderRadius: 'var(--radius-md)',
+                border: `2px solid ${form.sdlc_type === 'waterfall' ? '#dc2626' : 'var(--border-color)'}`,
+                backgroundColor: form.sdlc_type === 'waterfall' ? '#fef2f2' : 'var(--bg-app)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-main)', marginBottom: 2 }}>
+                🌊 Waterfall
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                Sequential phases: UR, DR, PU, ST, UT, TR, IP, MA.
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="form-group">

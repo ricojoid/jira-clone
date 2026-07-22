@@ -9,6 +9,15 @@ const COLUMN_ACCENTS = {
   'In Progress': { border: '#2563eb', badgeBg: '#eff6ff', badgeText: '#2563eb' },
   'In Review': { border: '#d97706', badgeBg: '#fffbeb', badgeText: '#d97706' },
   Done: { border: '#16a34a', badgeBg: '#f0fdf4', badgeText: '#16a34a' },
+  // Waterfall SDLC Phases
+  UR: { border: '#6366f1', badgeBg: '#e0e7ff', badgeText: '#4338ca', label: 'User Requirement' },
+  DR: { border: '#8b5cf6', badgeBg: '#f3e8ff', badgeText: '#6b21a8', label: 'Design Review' },
+  PU: { border: '#ec4899', badgeBg: '#fce7f3', badgeText: '#be185d', label: 'Production Update' },
+  ST: { border: '#3b82f6', badgeBg: '#dbeafe', badgeText: '#1d4ed8', label: 'System Testing' },
+  UT: { border: '#06b6d4', badgeBg: '#cffaff', badgeText: '#0e7490', label: 'User Testing' },
+  TR: { border: '#f59e0b', badgeBg: '#fef3c7', badgeText: '#b45309', label: 'Training' },
+  IP: { border: '#10b981', badgeBg: '#d1fae5', badgeText: '#047857', label: 'Implementation' },
+  MA: { border: '#22c55e', badgeBg: '#dcfce7', badgeText: '#15803d', label: 'Maintenance' },
 };
 
 function getColKey(col) {

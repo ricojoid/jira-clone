@@ -1,11 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Play, CheckCircle2, Edit2, Trash2, Calendar, Target } from 'lucide-react';
+import { Plus, Play, CheckCircle2, Edit2, Trash2, Calendar, Target, Layers, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sprintApi, issueApi } from '../api';
+import { sprintApi, issueApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+
+const WATERFALL_PHASES = [
+  { code: 'UR', name: 'User Requirement', color: '#6366f1' },
+  { code: 'DR', name: 'Design Review', color: '#8b5cf6' },
+  { code: 'PU', name: 'Production Update', color: '#ec4899' },
+  { code: 'ST', name: 'System Testing', color: '#3b82f6' },
+  { code: 'UT', name: 'User Acceptance Testing (UAT)', color: '#06b6d4' },
+  { code: 'TR', name: 'Training', color: '#f59e0b' },
+  { code: 'IP', name: 'Implementation', color: '#10b981' },
+  { code: 'MA', name: 'Maintenance', color: '#22c55e' },
+];
 
 const initialSprintForm = {
   name: '',
@@ -18,6 +29,7 @@ export default function SprintsPage() {
   const { projectId } = useParams();
   const { isPM } = useAuth();
 
+  const [project, setProject] = useState(null);
   const [sprints, setSprints] = useState([]);
   const [issuesBySprintId, setIssuesBySprintId] = useState({});
   const [loading, setLoading] = useState(true);
@@ -31,32 +43,60 @@ export default function SprintsPage() {
   const [deletingSprint, setDeletingSprint] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  const isWaterfall = (project?.sdlc_type || '').toLowerCase() === 'waterfall';
+
   const fetchData = useCallback(async () => {
+    if (!projectId) return;
     try {
       setLoading(true);
-      const [sprintsRes, issuesRes] = await Promise.all([
+      const [projRes, sprintsRes, issuesRes] = await Promise.all([
+        projectApi.get(projectId),
         sprintApi.listByProject(projectId),
         issueApi.listByProject(projectId),
       ]);
 
+      setProject(projRes.data);
       const sprintsData = sprintsRes.data || [];
       const issuesData = issuesRes.data || [];
 
       const grouped = {};
       sprintsData.forEach((s) => {
-        grouped[s.id || s._id] = [];
+        const sKey = String(s.id || s._id);
+        grouped[sKey] = [];
       });
+
       issuesData.forEach((issue) => {
-        if (issue.sprint_id && grouped[issue.sprint_id]) {
-          grouped[issue.sprint_id].push(issue);
+        const issueSprintKey = issue.sprint_id ? String(issue.sprint_id) : null;
+        if (issueSprintKey && grouped[issueSprintKey]) {
+          grouped[issueSprintKey].push(issue);
+          return;
+        }
+
+        // Fallback matching for Waterfall phases by phase code or title
+        const matchedSprint = sprintsData.find((s) => {
+          const sName = (s.name || '').trim();
+          const iTitle = (issue.title || '').trim();
+          const phaseCode = sName.split(' ')[0]?.replace(/-/g, '').trim(); // e.g. 'UR'
+          if (phaseCode && phaseCode.length <= 4) {
+            const regex = new RegExp(`^\\b${phaseCode}\\b`, 'i');
+            return regex.test(iTitle) || iTitle.toLowerCase().includes(sName.toLowerCase());
+          }
+          return false;
+        });
+
+        if (matchedSprint) {
+          const sKey = String(matchedSprint.id || matchedSprint._id);
+          if (grouped[sKey]) {
+            grouped[sKey].push(issue);
+          }
         }
       });
 
       setSprints(sprintsData);
       setIssuesBySprintId(grouped);
     } catch (err) {
-      console.error('Failed to fetch sprints:', err);
-      toast.error('Failed to load sprints');
+      console.error('Failed to fetch data:', err);
+      toast.error('Failed to load project details');
     } finally {
       setLoading(false);
     }
@@ -66,22 +106,43 @@ export default function SprintsPage() {
     fetchData();
   }, [fetchData]);
 
-  const openCreateDialog = () => {
+  const handleInitWaterfallPhases = async () => {
+    if (!isPM) return;
+    try {
+      setSubmitting(true);
+      for (const phase of WATERFALL_PHASES) {
+        await sprintApi.create({
+          project_id: projectId,
+          name: `${phase.code} - ${phase.name}`,
+          goal: `Objectives and deliverables for ${phase.name} phase.`,
+        });
+      }
+      toast.success('Successfully initialized all 8 Waterfall SDLC phases!');
+      fetchData();
+    } catch (err) {
+      console.error('Failed to init phases:', err);
+      toast.error('Failed to initialize phases');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openCreateDialog = (prefillName = '') => {
     if (!isPM) {
-      toast.error('Only Project Managers can create sprints');
+      toast.error('Only Project Managers can add items');
       return;
     }
     setEditingSprint(null);
     setSprintForm({
       ...initialSprintForm,
-      name: `Sprint ${sprints.length + 1}`,
+      name: prefillName || (isWaterfall ? 'UR - User Requirement' : `Sprint ${sprints.length + 1}`),
     });
     setDialogOpen(true);
   };
 
   const openEditDialog = (sprint) => {
     if (!isPM) {
-      toast.error('Only Project Managers can edit sprints');
+      toast.error('Only Project Managers can edit items');
       return;
     }
     setEditingSprint(sprint);
@@ -96,11 +157,11 @@ export default function SprintsPage() {
 
   const handleSubmit = async () => {
     if (!isPM) {
-      toast.error('Only Project Managers can manage sprints');
+      toast.error('Only Project Managers can manage items');
       return;
     }
     if (!sprintForm.name.trim()) {
-      toast.error('Sprint name is required');
+      toast.error('Name is required');
       return;
     }
 
@@ -115,18 +176,18 @@ export default function SprintsPage() {
 
       if (editingSprint) {
         await sprintApi.update(editingSprint.id || editingSprint._id, payload);
-        toast.success('Sprint updated');
+        toast.success(isWaterfall ? 'Phase updated' : 'Sprint updated');
       } else {
         payload.project_id = projectId;
         await sprintApi.create(payload);
-        toast.success('Sprint created');
+        toast.success(isWaterfall ? 'Phase added' : 'Sprint created');
       }
 
       setDialogOpen(false);
       fetchData();
     } catch (err) {
-      console.error('Failed to save sprint:', err);
-      toast.error(editingSprint ? 'Failed to update sprint' : 'Failed to create sprint');
+      console.error('Failed to save:', err);
+      toast.error(editingSprint ? 'Failed to update' : 'Failed to create');
     } finally {
       setSubmitting(false);
     }
@@ -135,20 +196,20 @@ export default function SprintsPage() {
   const handleStartSprint = async (sprint) => {
     try {
       await sprintApi.update(sprint.id || sprint._id, { status: 'active' });
-      toast.success(`Sprint "${sprint.name}" started`);
+      toast.success(`${isWaterfall ? 'Phase' : 'Sprint'} "${sprint.name}" started`);
       fetchData();
     } catch {
-      toast.error('Failed to start sprint');
+      toast.error('Failed to start');
     }
   };
 
   const handleCompleteSprint = async (sprint) => {
     try {
       await sprintApi.update(sprint.id || sprint._id, { status: 'completed' });
-      toast.success(`Sprint "${sprint.name}" completed`);
+      toast.success(`${isWaterfall ? 'Phase' : 'Sprint'} "${sprint.name}" completed`);
       fetchData();
     } catch {
-      toast.error('Failed to complete sprint');
+      toast.error('Failed to complete');
     }
   };
 
@@ -157,10 +218,10 @@ export default function SprintsPage() {
     try {
       setDeleting(true);
       await sprintApi.delete(deletingSprint.id || deletingSprint._id);
-      toast.success('Sprint deleted');
+      toast.success(isWaterfall ? 'Phase deleted' : 'Sprint deleted');
       fetchData();
     } catch {
-      toast.error('Failed to delete sprint');
+      toast.error('Failed to delete');
     } finally {
       setDeleting(false);
       setDeleteOpen(false);
@@ -169,10 +230,12 @@ export default function SprintsPage() {
   };
 
   const getSprintProgress = (sprintId) => {
-    const issues = issuesBySprintId[sprintId] || [];
-    if (issues.length === 0) return { done: 0, total: 0, pct: 0 };
-    const done = issues.filter((i) => i.status === 'done').length;
-    return { done, total: issues.length, pct: Math.round((done / issues.length) * 100) };
+    const sKey = String(sprintId);
+    const issues = issuesBySprintId[sKey] || [];
+    if (issues.length === 0) return { done: 0, total: 0, pct: 0, issues: [] };
+    const done = issues.filter((i) => String(i.status || '').toLowerCase() === 'done').length;
+    const pct = Math.round((done / issues.length) * 100);
+    return { done, total: issues.length, pct, issues };
   };
 
   const formatDate = (dateStr) => {
@@ -181,7 +244,7 @@ export default function SprintsPage() {
   };
 
   if (loading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading sprints...</div>;
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>;
   }
 
   return (
@@ -189,31 +252,68 @@ export default function SprintsPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            Sprint Management
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+              {isWaterfall ? 'Waterfall Phase Management' : 'Sprint Management'}
+            </h2>
+            <span
+              className="badge"
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                backgroundColor: isWaterfall ? '#fef3c7' : '#e0e7ff',
+                color: isWaterfall ? '#b45309' : '#4338ca',
+                border: `1px solid ${isWaterfall ? '#fcd34d' : '#c7d2fe'}`,
+              }}
+            >
+              {isWaterfall ? 'WATERFALL SDLC' : 'AGILE SCRUM'}
+            </span>
+          </div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
-            {sprints.length} total sprints
+            {isWaterfall
+              ? 'Manage target dates and goals for Waterfall phases (UR, DR, PU, ST, UT, TR, IP, MA)'
+              : `${sprints.length} total sprints planned and active`}
           </div>
         </div>
 
-        <Button variant="primary" icon={Plus} onClick={openCreateDialog} disabled={!isPM}>
-          Create Sprint
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isWaterfall && sprints.length === 0 && isPM && (
+            <Button variant="secondary" icon={Sparkles} onClick={handleInitWaterfallPhases} disabled={submitting}>
+              Auto-Create 8 Standard Phases
+            </Button>
+          )}
+          <Button variant="primary" icon={Plus} onClick={() => openCreateDialog()} disabled={!isPM}>
+            {isWaterfall ? 'Add Phase' : 'Create Sprint'}
+          </Button>
+        </div>
       </div>
 
-      {/* Sprint Cards */}
+
+
+      {/* Sprint / Phase Cards */}
       {sprints.length === 0 ? (
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <Calendar size={48} style={{ color: 'var(--text-light)', marginBottom: 12 }} />
-          <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>No Sprints Created</h4>
+          <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>
+            {isWaterfall ? 'No SDLC Phases Configured' : 'No Sprints Created'}
+          </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 16 }}>
-            {isPM ? 'Create your first sprint to organize work iterations.' : 'No sprints have been created for this project.'}
+            {isWaterfall
+              ? 'Click below to automatically create all 8 Waterfall phases (UR, DR, PU, ST, UT, TR, IP, MA).'
+              : isPM ? 'Create your first sprint to organize work iterations.' : 'No sprints have been created for this project.'}
           </p>
           {isPM && (
-            <Button variant="primary" icon={Plus} onClick={openCreateDialog}>
-              Create Sprint
-            </Button>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+              {isWaterfall ? (
+                <Button variant="primary" icon={Sparkles} onClick={handleInitWaterfallPhases} disabled={submitting}>
+                  Auto-Create 8 Standard Phases
+                </Button>
+              ) : (
+                <Button variant="primary" icon={Plus} onClick={() => openCreateDialog()}>
+                  Create Sprint
+                </Button>
+              )}
+            </div>
           )}
         </div>
       ) : (
@@ -233,7 +333,7 @@ export default function SprintsPage() {
                       </span>
                     </div>
 
-                    {sprint.goal && (
+                    {!isWaterfall && sprint.goal && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 6 }}>
                         <Target size={14} color="var(--primary)" />
                         Goal: {sprint.goal}
@@ -242,19 +342,19 @@ export default function SprintsPage() {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-light)' }}>
                       <Calendar size={14} />
-                      {sprint.start_date && sprint.end_date ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : 'Dates not set'}
+                      {sprint.start_date && sprint.end_date ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : 'Target dates not set'}
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: 8 }}>
                     {sprint.status === 'planned' && (
-                      <Button variant="primary" size="sm" icon={Play} onClick={() => handleStartSprint(sprint)} disabled={progress.total === 0}>
-                        Start Sprint
+                      <Button variant="primary" size="sm" icon={Play} onClick={() => handleStartSprint(sprint)}>
+                        {isWaterfall ? 'Start Phase' : 'Start Sprint'}
                       </Button>
                     )}
                     {sprint.status === 'active' && (
                       <Button variant="outline" size="sm" icon={CheckCircle2} onClick={() => handleCompleteSprint(sprint)}>
-                        Complete Sprint
+                        {isWaterfall ? 'Complete Phase' : 'Complete Sprint'}
                       </Button>
                     )}
                     {isPM && (
@@ -268,14 +368,16 @@ export default function SprintsPage() {
 
                 {/* Progress Bar */}
                 <div style={{ marginTop: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.775rem', marginBottom: 6 }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Sprint Progress</span>
-                    <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                      {progress.done} of {progress.total} done ({progress.pct}%)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 6 }}>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+                      {isWaterfall ? 'Phase Task Progress' : 'Sprint Task Progress'}
+                    </span>
+                    <span style={{ fontWeight: 800, color: progress.pct === 100 ? '#16a34a' : 'var(--primary)' }}>
+                      {progress.done} of {progress.total} tasks completed ({progress.pct}%)
                     </span>
                   </div>
-                  <div style={{ height: 6, borderRadius: 3, backgroundColor: 'var(--bg-subtle)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${progress.pct}%`, backgroundColor: progress.pct === 100 ? '#16a34a' : 'var(--primary)', transition: 'width 0.3s' }} />
+                  <div style={{ height: 8, borderRadius: 4, backgroundColor: 'var(--bg-subtle)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress.pct}%`, backgroundColor: progress.pct === 100 ? '#16a34a' : '#dc2626', transition: 'width 0.3s ease' }} />
                   </div>
                 </div>
               </div>
@@ -284,26 +386,26 @@ export default function SprintsPage() {
         </div>
       )}
 
-      {/* Create / Edit Sprint Modal */}
+      {/* Create / Edit Modal */}
       <Modal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        title={editingSprint ? 'Edit Sprint' : 'Create Sprint'}
+        title={editingSprint ? (isWaterfall ? 'Edit Phase' : 'Edit Sprint') : (isWaterfall ? 'Add Phase' : 'Create Sprint')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={handleSubmit} disabled={submitting || !sprintForm.name.trim()}>
-              {submitting ? 'Saving...' : editingSprint ? 'Save Changes' : 'Create Sprint'}
+              {submitting ? 'Saving...' : editingSprint ? 'Save Changes' : (isWaterfall ? 'Save Phase' : 'Create Sprint')}
             </Button>
           </>
         }
       >
         <div className="form-group">
-          <label className="form-label">Sprint Name *</label>
+          <label className="form-label">{isWaterfall ? 'Phase Name / Code *' : 'Sprint Name *'}</label>
           <input
             className="form-input"
             type="text"
-            placeholder="Sprint 1"
+            placeholder={isWaterfall ? 'e.g. UR - User Requirement' : 'Sprint 1'}
             value={sprintForm.name}
             onChange={(e) => setSprintForm((p) => ({ ...p, name: e.target.value }))}
             autoFocus
@@ -311,11 +413,11 @@ export default function SprintsPage() {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Sprint Goal</label>
+          <label className="form-label">{isWaterfall ? 'Phase Goal / Deliverables' : 'Sprint Goal'}</label>
           <textarea
             className="form-textarea"
             rows={3}
-            placeholder="What is the objective of this sprint?"
+            placeholder={isWaterfall ? 'What are the main deliverables for this phase?' : 'What is the objective of this sprint?'}
             value={sprintForm.goal}
             onChange={(e) => setSprintForm((p) => ({ ...p, goal: e.target.value }))}
           />
@@ -333,7 +435,7 @@ export default function SprintsPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">End Date</label>
+            <label className="form-label">End Date / Target Date</label>
             <input
               className="form-input"
               type="date"
@@ -348,7 +450,7 @@ export default function SprintsPage() {
       <Modal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        title="Delete Sprint"
+        title={isWaterfall ? 'Delete Phase' : 'Delete Sprint'}
         footer={
           <>
             <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
@@ -359,7 +461,7 @@ export default function SprintsPage() {
         }
       >
         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-          Are you sure you want to delete <strong>{deletingSprint?.name}</strong>? Tasks in this sprint will return to the backlog.
+          Are you sure you want to delete <strong>{deletingSprint?.name}</strong>? Tasks assigned to this phase will remain in the project backlog.
         </p>
       </Modal>
     </div>

@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { issueApi, userApi, sprintApi } from '../../api';
+import { issueApi, userApi, sprintApi, projectApi } from '../../api';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 import { TYPE_META, PRIORITY_META, TypeIcon } from '../ui/Badge';
+
+const WATERFALL_DEFAULT_PHASES = [
+  { code: 'UR', name: 'User Requirement' },
+  { code: 'DR', name: 'Design Review' },
+  { code: 'PU', name: 'Production Update' },
+  { code: 'ST', name: 'System Testing' },
+  { code: 'UT', name: 'User Acceptance Testing (UAT)' },
+  { code: 'TR', name: 'Training' },
+  { code: 'IP', name: 'Implementation' },
+  { code: 'MA', name: 'Maintenance' },
+];
 
 const initialForm = {
   title: '',
@@ -19,6 +30,7 @@ const initialForm = {
 
 export default function CreateIssueDialog({ open, onClose, projectId, onCreated, parentId }) {
   const [form, setForm] = useState(initialForm);
+  const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [labels, setLabels] = useState([]);
@@ -30,12 +42,16 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
     const fetchData = async () => {
       try {
-        const [usersRes, sprintsRes] = await Promise.all([
+        const [usersRes, sprintsRes, projRes] = await Promise.all([
           userApi.list(),
           sprintApi.listByProject(projectId),
+          projectApi.get(projectId).catch(() => ({ data: null })),
         ]);
         setUsers(usersRes.data || []);
-        setSprints(sprintsRes.data || []);
+        if (projRes.data) setProject(projRes.data);
+
+        const sprintList = sprintsRes.data?.sprints ?? sprintsRes.data ?? [];
+        setSprints(sprintList);
 
         try {
           const labelsRes = await issueApi.listLabels(projectId);
@@ -50,6 +66,21 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
     fetchData();
   }, [open, projectId]);
+
+  const isWaterfall = (project?.sdlc_type || '').toLowerCase() === 'waterfall';
+
+  const displaySprints = (() => {
+    if (sprints && sprints.length > 0) {
+      return sprints;
+    }
+    if (isWaterfall) {
+      return WATERFALL_DEFAULT_PHASES.map((p) => ({
+        id: `virtual_${p.code}`,
+        name: `${p.code} - ${p.name}`,
+      }));
+    }
+    return [];
+  })();
 
   useEffect(() => {
     if (!open) {
@@ -113,7 +144,28 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
       };
 
       if (form.assignee_id) payload.assignee_id = Number(form.assignee_id);
-      if (form.sprint_id) payload.sprint_id = Number(form.sprint_id);
+      if (form.sprint_id) {
+        if (String(form.sprint_id).startsWith('virtual_')) {
+          const code = String(form.sprint_id).replace('virtual_', '');
+          const phaseMatch = WATERFALL_DEFAULT_PHASES.find((p) => p.code === code);
+          if (phaseMatch) {
+            try {
+              const res = await sprintApi.create({
+                project_id: Number(projectId),
+                name: `${phaseMatch.code} - ${phaseMatch.name}`,
+                goal: `Deliverables for ${phaseMatch.name} phase`,
+              });
+              if (res.data?.id || res.data?._id) {
+                payload.sprint_id = Number(res.data.id || res.data._id);
+              }
+            } catch (err) {
+              console.error('Failed creating virtual phase:', err);
+            }
+          }
+        } else {
+          payload.sprint_id = Number(form.sprint_id);
+        }
+      }
       if (form.story_points !== '') payload.story_points = Number(form.story_points);
       if (parentId) payload.parent_id = Number(parentId);
       if (form.labels.length > 0) {
@@ -205,10 +257,10 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         </div>
 
         <div className="form-group">
-          <label className="form-label">Sprint</label>
+          <label className="form-label">{isWaterfall ? 'Phase' : 'Sprint'}</label>
           <select className="form-select" value={form.sprint_id} onChange={handleChange('sprint_id')}>
-            <option value="">No Sprint (Backlog)</option>
-            {sprints.map((s) => (
+            <option value="">{isWaterfall ? 'No Phase (Backlog)' : 'No Sprint (Backlog)'}</option>
+            {displaySprints.map((s) => (
               <option key={s.id || s._id} value={s.id || s._id}>
                 {s.name}
               </option>

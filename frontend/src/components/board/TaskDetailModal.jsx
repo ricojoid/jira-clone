@@ -450,9 +450,9 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Sprint</label>
+                <label className="form-label">{(issue?.project?.sdlc_type || '').toLowerCase() === 'waterfall' ? 'Phase' : 'Sprint'}</label>
                 <select className="form-select" value={issue.sprint_id || ''} onChange={(e) => updateField('sprint_id', e.target.value || null)}>
-                  <option value="">No Sprint (Backlog)</option>
+                  <option value="">{(issue?.project?.sdlc_type || '').toLowerCase() === 'waterfall' ? 'No Phase (Backlog)' : 'No Sprint (Backlog)'}</option>
                   {sprints.map((s) => (
                     <option key={s.id || s._id} value={s.id || s._id}>
                       {s.name}

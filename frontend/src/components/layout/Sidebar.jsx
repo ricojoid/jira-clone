@@ -31,7 +31,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Board', icon: Kanban, path: '/board' },
     { label: 'Backlog', icon: ListTodo, path: '/backlog' },
-    { label: 'Sprints', icon: Zap, path: '/sprints' },
+    { label: 'Phases / Sprints', icon: Zap, path: '/sprints' },
     { label: 'Issues', icon: CheckSquare, path: '/issues' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
@@ -155,7 +155,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
             {projects.length === 0 && <option value="">No projects</option>}
             {projects.map((p) => (
               <option key={p._id || p.id} value={p._id || p.id}>
-                {p.name}
+                {p.name} [{(p.sdlc_type || 'scrum').toUpperCase()}]
               </option>
             ))}
           </select>
@@ -182,20 +182,21 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
                   navigate(item.path);
                 }
               }}
-              className="btn btn-ghost"
+              className="btn"
+              title={collapsed ? item.label : undefined}
               style={{
                 width: '100%',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                padding: '10px 12px',
                 marginBottom: 4,
-                backgroundColor: active ? 'var(--primary-light)' : 'transparent',
-                color: active ? 'var(--primary)' : 'var(--text-body)',
+                backgroundColor: active ? '#dc2626' : 'transparent',
+                color: active ? '#ffffff' : 'var(--text-body)',
                 fontWeight: active ? 800 : 600,
-                border: active ? '1px solid var(--primary-border)' : '1px solid transparent',
+                border: active ? '1px solid #b91c1c' : '1px solid transparent',
+                boxShadow: active ? '0 2px 6px rgba(220, 38, 38, 0.3)' : 'none',
+                transition: 'all 0.15s ease',
               }}
-              title={collapsed ? item.label : undefined}
             >
-              <Icon size={18} style={{ color: active ? 'var(--primary)' : 'var(--text-muted)' }} />
+              <Icon size={18} style={{ color: active ? '#ffffff' : 'var(--text-muted)' }} />
               {!collapsed && <span>{item.label}</span>}
             </button>
           );
