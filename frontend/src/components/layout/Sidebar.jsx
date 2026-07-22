@@ -113,10 +113,10 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
           {!collapsed && (
             <div>
               <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
-                Jira Clone
+                Jired
               </div>
               <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 800 }}>
-                Enterprise Red
+                Enterprise Platform
               </div>
             </div>
           )}

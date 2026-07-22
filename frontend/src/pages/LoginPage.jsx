@@ -82,7 +82,7 @@ export default function LoginPage() {
             JC
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            Welcome to Jira Clone
+            Welcome to Jired
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
             Sign in with your Username or Email
