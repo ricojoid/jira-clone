@@ -1,32 +1,11 @@
-import { useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
+import { Search, Plus, ChevronRight, LogOut, Settings } from 'lucide-react';
 import CreateIssueDialog from '../issues/CreateIssueDialog';
-import {
-  AppBar,
-  Toolbar,
-  Box,
-  Breadcrumbs,
-  Link,
-  Typography,
-  TextField,
-  InputAdornment,
-  Button,
-  IconButton,
-  Badge,
-  Avatar,
-  Menu,
-  MenuItem,
-  Divider,
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  NotificationsOutlined as NotificationIcon,
-  NavigateNext as BreadcrumbSeparator,
-  Logout as LogoutIcon,
-  PersonOutlined as ProfileIcon,
-} from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import Avatar from '../ui/Avatar';
+import Button from '../ui/Button';
+import toast from 'react-hot-toast';
 
 function buildBreadcrumbs(pathname) {
   const segments = pathname.split('/').filter(Boolean);
@@ -46,31 +25,33 @@ export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const { user, logout } = useAuth();
+  const { user, logout, isPM } = useAuth();
 
   const [searchValue, setSearchValue] = useState('');
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const menuOpen = Boolean(anchorEl);
+  const menuRef = useRef(null);
 
   const breadcrumbs = buildBreadcrumbs(location.pathname);
 
-  const handleAvatarClick = (e) => {
-    setAnchorEl(e.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
-    handleMenuClose();
+    setMenuOpen(false);
     if (logout) logout();
     navigate('/login');
   };
 
   const handleProfile = () => {
-    handleMenuClose();
+    setMenuOpen(false);
     navigate('/settings');
   };
 
@@ -81,216 +62,144 @@ export default function TopBar() {
     }
   };
 
+  const handleCreateClick = () => {
+    if (!isPM) {
+      toast.error('Only Project Managers can create issues');
+      return;
+    }
+    setCreateOpen(true);
+  };
+
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      sx={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        color: '#1e293b',
+    <header
+      style={{
+        height: 60,
+        minHeight: 60,
+        backgroundColor: 'var(--bg-surface)',
+        borderBottom: '1px solid var(--border-color)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 24px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 90,
       }}
     >
-      <Toolbar
-        sx={{
-          minHeight: '56px !important',
-          px: { xs: 2, md: 3 },
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        {/* Left: Breadcrumbs */}
-        <Breadcrumbs
-          separator={
-            <BreadcrumbSeparator
-              fontSize="small"
-              sx={{ color: '#94a3b8' }}
-            />
-          }
-          sx={{ flexShrink: 0 }}
-        >
-          {breadcrumbs.map((crumb, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            return isLast ? (
-              <Typography
-                key={crumb.path}
-                sx={{
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#1e293b',
-                }}
-              >
-                {crumb.label}
-              </Typography>
-            ) : (
-              <Link
-                key={crumb.path}
-                underline="hover"
-                onClick={() => navigate(crumb.path)}
-                sx={{
-                  fontSize: '0.85rem',
-                  color: '#64748b',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  '&:hover': { color: '#6366f1' },
-                }}
-              >
-                {crumb.label}
-              </Link>
-            );
-          })}
-        </Breadcrumbs>
+      {/* Breadcrumbs */}
+      <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+        {breadcrumbs.map((crumb, idx) => {
+          const isLast = idx === breadcrumbs.length - 1;
+          return (
+            <span key={crumb.path} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {idx > 0 && <ChevronRight size={14} color="var(--text-light)" />}
+              {isLast ? (
+                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{crumb.label}</span>
+              ) : (
+                <Link
+                  to={crumb.path}
+                  style={{ color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}
+                >
+                  {crumb.label}
+                </Link>
+              )}
+            </span>
+          );
+        })}
+      </nav>
 
-        {/* Right: Search + Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {/* Search */}
-          <TextField
-            size="small"
+      {/* Actions & Profile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
+          <Search
+            size={16}
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}
+          />
+          <input
+            className="form-input"
+            type="text"
             placeholder="Search issues..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={handleSearch}
-            variant="outlined"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: 20, color: '#94a3b8' }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: 240,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '8px',
-                backgroundColor: '#f8fafc',
-                fontSize: '0.85rem',
-                '& fieldset': { borderColor: '#e2e8f0' },
-                '&:hover fieldset': { borderColor: '#c7d2fe' },
-                '&.Mui-focused fieldset': { borderColor: '#6366f1' },
-              },
-            }}
+            style={{ paddingLeft: 34, width: 200, height: 36, fontSize: '0.825rem' }}
           />
+        </div>
 
-          {/* Create Issue Button */}
-          {projectId && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateOpen(true)}
-              sx={{
-                textTransform: 'none',
-                borderRadius: '8px',
-                fontWeight: 600,
-                fontSize: '0.825rem',
-                px: 2,
-                py: 0.8,
-                backgroundColor: '#6366f1',
-                boxShadow: 'none',
-                '&:hover': {
-                  backgroundColor: '#4f46e5',
-                  boxShadow: 'none',
-                },
+        {/* Create Issue */}
+        {projectId && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleCreateClick}
+            disabled={!isPM}
+            icon={Plus}
+          >
+            Create Issue
+          </Button>
+        )}
+
+        {/* User Menu Dropdown */}
+        <div style={{ position: 'relative' }} ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar} size={34} />
+          </button>
+
+          {menuOpen && (
+            <div
+              className="card"
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 44,
+                width: 220,
+                padding: '8px 0',
+                zIndex: 200,
+                boxShadow: 'var(--shadow-xl)',
               }}
             >
-              Create Issue
-            </Button>
+              <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light)' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
+                  {user?.full_name || user?.username || user?.name || 'User'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {user?.email || ''}
+                </div>
+              </div>
+
+              <div style={{ padding: '4px 0' }}>
+                <button
+                  className="btn btn-ghost"
+                  onClick={handleProfile}
+                  style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 0, padding: '8px 16px' }}
+                >
+                  <Settings size={16} />
+                  Settings
+                </button>
+
+                <button
+                  className="btn btn-ghost"
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                    borderRadius: 0,
+                    padding: '8px 16px',
+                    color: '#dc2626',
+                  }}
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            </div>
           )}
+        </div>
+      </div>
 
-          {/* Notifications */}
-          <IconButton
-            size="small"
-            sx={{
-              color: '#64748b',
-              '&:hover': { backgroundColor: '#f1f5f9' },
-            }}
-          >
-            <Badge
-              variant="dot"
-              invisible
-              sx={{
-                '& .MuiBadge-badge': {
-                  backgroundColor: '#6366f1',
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  minWidth: 18,
-                  height: 18,
-                },
-              }}
-            >
-              <NotificationIcon fontSize="small" />
-            </Badge>
-          </IconButton>
-
-          {/* User Avatar / Dropdown */}
-          <IconButton
-            onClick={handleAvatarClick}
-            size="small"
-            sx={{ ml: 0.5 }}
-          >
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: '#6366f1',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
-              src={user?.avatar}
-            >
-              {user?.full_name || user?.username || user?.name
-                ? (user.full_name || user.username || user.name)
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                : 'U'}
-            </Avatar>
-          </IconButton>
-
-          <Menu
-            anchorEl={anchorEl}
-            open={menuOpen}
-            onClose={handleMenuClose}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            PaperProps={{
-              sx: {
-                mt: 1,
-                borderRadius: '10px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                border: '1px solid #f1f5f9',
-                minWidth: 180,
-              },
-            }}
-          >
-            <Box sx={{ px: 2, py: 1.5 }}>
-              <Typography
-                sx={{ fontWeight: 600, fontSize: '0.875rem', color: '#1e293b' }}
-              >
-                {user?.full_name || user?.username || user?.name || 'User'}
-              </Typography>
-              <Typography sx={{ fontSize: '0.75rem', color: '#64748b' }}>
-                {user?.email || ''}
-              </Typography>
-            </Box>
-            <Divider sx={{ borderColor: '#f1f5f9' }} />
-            <MenuItem
-              onClick={handleProfile}
-              sx={{ fontSize: '0.85rem', gap: 1.5, py: 1 }}
-            >
-              <ProfileIcon fontSize="small" sx={{ color: '#64748b' }} />
-              Profile
-            </MenuItem>
-            <MenuItem
-              onClick={handleLogout}
-              sx={{ fontSize: '0.85rem', gap: 1.5, py: 1, color: '#ef4444' }}
-            >
-              <LogoutIcon fontSize="small" />
-              Logout
-            </MenuItem>
-          </Menu>
-        </Box>
-      </Toolbar>
       {projectId && (
         <CreateIssueDialog
           open={createOpen}
@@ -302,6 +211,6 @@ export default function TopBar() {
           }}
         />
       )}
-    </AppBar>
+    </header>
   );
 }

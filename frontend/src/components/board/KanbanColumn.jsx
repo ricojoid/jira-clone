@@ -1,26 +1,30 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Box, Typography, IconButton, Paper, Tooltip } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import { Plus } from 'lucide-react';
 import IssueCard from './IssueCard';
 
-const COLUMN_COLORS = {
-  'To Do': '#94a3b8',
-  'In Progress': '#3b82f6',
-  'In Review': '#f59e0b',
-  Done: '#22c55e',
+const COLUMN_ACCENTS = {
+  'To Do': { border: 'var(--text-muted)', badgeBg: 'var(--bg-subtle)', badgeText: 'var(--text-body)' },
+  'In Progress': { border: '#2563eb', badgeBg: '#eff6ff', badgeText: '#2563eb' },
+  'In Review': { border: '#d97706', badgeBg: '#fffbeb', badgeText: '#d97706' },
+  Done: { border: '#16a34a', badgeBg: '#f0fdf4', badgeText: '#16a34a' },
 };
 
-export default function KanbanColumn({
-  column,
-  issues,
-  onIssueClick,
-  onAddIssue,
-}) {
-  const columnId = column.id || column._id || column.status;
+function getColKey(col) {
+  if (!col) return 'todo';
+  let s = col.status;
+  if (!s && col.name) {
+    s = col.name.toLowerCase().replace(/\s+/g, '_');
+    if (s === 'to_do') s = 'todo';
+  }
+  return s || col.id || col._id || 'todo';
+}
+
+export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue }) {
+  const columnId = getColKey(column);
   const columnName = column.name || column.title;
-  const topColor = COLUMN_COLORS[columnName] || '#94a3b8';
+  const accent = COLUMN_ACCENTS[columnName] || { border: 'var(--primary)', badgeBg: 'var(--primary-light)', badgeText: 'var(--primary)' };
 
   const { setNodeRef, isOver } = useDroppable({
     id: columnId,
@@ -30,128 +34,110 @@ export default function KanbanColumn({
   const issueIds = issues.map((issue) => issue.id || issue._id);
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        width: 280,
-        minWidth: 280,
-        maxWidth: 280,
+    <div
+      className="card"
+      style={{
+        width: 320,
+        minWidth: 300,
+        maxWidth: 340,
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#f4f5f7',
-        borderRadius: 2,
+        backgroundColor: 'var(--bg-surface)',
+        borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
-        border: '1px solid',
-        borderColor: isOver ? 'primary.300' : 'grey.200',
-        transition: 'border-color 0.2s ease',
+        border: `1px solid ${isOver ? 'var(--primary)' : 'var(--border-color)'}`,
+        boxShadow: isOver ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+        transition: 'all 0.15s ease',
         flexShrink: 0,
       }}
     >
-      {/* Colored top border */}
-      <Box sx={{ height: 3, bgcolor: topColor, flexShrink: 0 }} />
+      {/* Top Accent Line */}
+      <div style={{ height: 4, backgroundColor: accent.border, flexShrink: 0 }} />
 
-      {/* Column header */}
-      <Box
-        sx={{
+      {/* Header */}
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: 1.5,
-          py: 1.25,
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border-color)',
+          backgroundColor: 'var(--bg-hover)',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{
-              fontWeight: 700,
-              fontSize: '0.75rem',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
               textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              color: 'text.secondary',
+              letterSpacing: '0.05em',
+              color: 'var(--text-main)',
             }}
           >
             {columnName}
-          </Typography>
-          <Box
-            sx={{
-              bgcolor: 'grey.300',
-              color: 'text.secondary',
-              borderRadius: '50%',
-              width: 22,
-              height: 22,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.7rem',
-              fontWeight: 700,
+          </span>
+          <span
+            className="badge"
+            style={{
+              backgroundColor: accent.badgeBg,
+              color: accent.badgeText,
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.725rem',
+              padding: '2px 6px',
             }}
           >
             {issues.length}
-          </Box>
-        </Box>
+          </span>
+        </div>
 
-        <Tooltip title={`Create issue in ${columnName}`} arrow>
-          <IconButton
-            size="small"
-            onClick={() => onAddIssue?.(column)}
-            sx={{
-              width: 26,
-              height: 26,
-              color: 'text.secondary',
-              '&:hover': { bgcolor: 'grey.300', color: 'text.primary' },
-            }}
-          >
-            <AddIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Tooltip>
-      </Box>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => onAddIssue?.(column)}
+          title={`Add issue to ${columnName}`}
+          style={{ padding: 4 }}
+        >
+          <Plus size={16} />
+        </button>
+      </div>
 
-      {/* Droppable area with issue cards */}
+      {/* Droppable Issue List */}
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
-        <Box
+        <div
           ref={setNodeRef}
-          sx={{
+          style={{
             flex: 1,
-            px: 1,
-            pb: 1,
-            minHeight: 120,
+            padding: 12,
+            minHeight: 200,
             overflowY: 'auto',
-            '&::-webkit-scrollbar': { width: 4 },
-            '&::-webkit-scrollbar-thumb': {
-              bgcolor: 'grey.300',
-              borderRadius: 2,
-            },
-            transition: 'background-color 0.2s ease',
-            bgcolor: isOver ? 'rgba(59,130,246,0.04)' : 'transparent',
+            backgroundColor: isOver ? 'var(--primary-light)' : 'var(--bg-app)',
+            transition: 'background-color 0.15s ease',
           }}
         >
           {issues.map((issue) => (
-            <IssueCard
-              key={issue.id || issue._id}
-              issue={issue}
-              onIssueClick={onIssueClick}
-            />
+            <IssueCard key={issue.id || issue._id} issue={issue} onIssueClick={onIssueClick} />
           ))}
 
           {issues.length === 0 && (
-            <Box
-              sx={{
+            <div
+              style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                py: 4,
-                color: 'text.disabled',
+                padding: '48px 16px',
+                color: 'var(--text-light)',
                 fontSize: '0.8rem',
-                fontStyle: 'italic',
-                userSelect: 'none',
+                fontWeight: 500,
+                border: '1.5px dashed var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--bg-surface)',
               }}
             >
-              No issues
-            </Box>
+              No issues in this column
+            </div>
           )}
-        </Box>
+        </div>
       </SortableContext>
-    </Paper>
+    </div>
   );
 }

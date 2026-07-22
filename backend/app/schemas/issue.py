@@ -34,7 +34,7 @@ class CommentCreate(CommentBase):
 class CommentResponse(CommentBase):
     id: int
     issue_id: int
-    author: UserBrief
+    author: Optional[UserBrief] = None
     created_at: datetime
     updated_at: datetime
 
@@ -77,11 +77,16 @@ class IssueUpdate(BaseModel):
 class IssueBrief(BaseModel):
     id: int
     title: str
-    issue_key: str
-    issue_type: str
-    status: str
-    priority: str
+    issue_key: Optional[str] = "TASK-1"
+    issue_type: Optional[str] = "task"
+    status: Optional[str] = "todo"
+    priority: Optional[str] = "medium"
+    story_points: Optional[int] = None
+    position: Optional[int] = 0
+    project_id: Optional[int] = None
+    assignee_id: Optional[int] = None
     assignee: Optional[UserBrief] = None
+    labels: Optional[List[LabelResponse]] = []
 
     class Config:
         from_attributes = True
@@ -94,7 +99,7 @@ class IssueResponse(IssueBase):
     position: int
     project_id: int
     assignee_id: Optional[int] = None
-    reporter_id: int
+    reporter_id: Optional[int] = None
     sprint_id: Optional[int] = None
     parent_id: Optional[int] = None
     due_date: Optional[datetime] = None

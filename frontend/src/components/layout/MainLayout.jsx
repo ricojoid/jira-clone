@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
@@ -15,67 +14,29 @@ export default function MainLayout() {
     setSidebarCollapsed((prev) => !prev);
   };
 
-  // Show loading spinner while auth state is being resolved
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          backgroundColor: '#f8fafc',
-        }}
-      >
-        <CircularProgress sx={{ color: '#6366f1' }} />
-      </Box>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f8fafc' }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '3px solid #eef2ff', borderTopColor: '#6366f1', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
     );
   }
 
-  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        minHeight: '100vh',
-        backgroundColor: '#f8fafc',
-      }}
-    >
-      {/* Sidebar */}
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
-      />
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)' }}>
+      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={handleToggleSidebar} />
 
-      {/* Main content area */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Top bar */}
+      <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
         <TopBar />
-
-        {/* Page content */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflow: 'auto',
-            p: 1.5,
-          }}
-        >
+        <div style={{ flexGrow: 1, overflowY: 'auto', padding: '24px 32px' }}>
           <Outlet />
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </main>
+    </div>
   );
 }

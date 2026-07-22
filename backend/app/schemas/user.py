@@ -5,18 +5,21 @@ from datetime import datetime
 
 # --- User Schemas ---
 class UserBase(BaseModel):
-    email: str
+    email: Optional[str] = ""
     username: str
-    full_name: str
+    full_name: Optional[str] = ""
+    role: Optional[str] = "pm"
 
 
 class UserCreate(UserBase):
     password: str
+    role: Optional[str] = "pm"
 
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
+    role: Optional[str] = None
 
 
 class PasswordChange(BaseModel):
@@ -24,9 +27,22 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+class RoleUpdate(BaseModel):
+    role: str
+
+
+class AdminResetPassword(BaseModel):
+    new_password: str
+
+
+class StatusUpdate(BaseModel):
+    is_active: bool
+
+
 class UserResponse(UserBase):
     id: int
     avatar_url: Optional[str] = None
+    role: str = "pm"
     is_active: bool
     created_at: datetime
 
@@ -36,9 +52,10 @@ class UserResponse(UserBase):
 
 class UserBrief(BaseModel):
     id: int
-    username: str
-    full_name: str
+    username: Optional[str] = ""
+    full_name: Optional[str] = ""
     avatar_url: Optional[str] = None
+    role: Optional[str] = "pm"
 
     class Config:
         from_attributes = True
@@ -51,5 +68,6 @@ class Token(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str
+    email: Optional[str] = None
+    username: Optional[str] = None
     password: str

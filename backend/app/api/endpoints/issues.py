@@ -50,7 +50,11 @@ def list_issues(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Issue).filter(Issue.project_id == project_id)
+    query = (
+        db.query(Issue)
+        .options(joinedload(Issue.assignee), joinedload(Issue.labels))
+        .filter(Issue.project_id == project_id)
+    )
     if status:
         query = query.filter(Issue.status == status)
     if issue_type:
@@ -110,6 +114,14 @@ def create_issue(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Check if user has PM role
+    user_role = getattr(current_user, 'role', 'pm') or 'pm'
+    if user_role.lower() not in ["pm", "project_manager", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya user dengan role PM yang dapat membuat issue",
+        )
+
     issue_key = _generate_issue_key(db, issue_data.project_id)
 
     # Get max position
@@ -137,8 +149,7 @@ def create_issue(
 
     db.add(issue)
     db.commit()
-    db.refresh(issue)
-    return issue
+    return get_issue(issue.id, current_user, db)
 
 
 @router.put("/{issue_id}", response_model=IssueResponse)
@@ -156,10 +167,15 @@ def update_issue(
 
     # Permission check for moving/changing card status
     if "status" in update_data and update_data["status"] != issue.status:
-        if current_user.id != issue.assignee_id and current_user.id != issue.project.owner_id:
+        user_role = (getattr(current_user, 'role', '') or '').lower()
+        is_admin_or_pm = user_role in ["super_admin", "admin", "pm", "project_manager"]
+        is_owner = current_user.id == issue.project.owner_id
+        is_assignee = current_user.id == issue.assignee_id
+        is_reporter = current_user.id == issue.reporter_id
+        if not (is_admin_or_pm or is_owner or is_assignee or is_reporter):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the assignee or the project manager can move this card",
+                detail="Only the assignee, reporter, PM, or Admin can move this card",
             )
 
     # Handle labels separately
@@ -188,12 +204,18 @@ def move_issue(
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
 
+    user_role = (getattr(current_user, 'role', '') or '').lower()
+    is_admin_or_pm = user_role in ["super_admin", "admin", "pm", "project_manager"]
+    is_owner = current_user.id == issue.project.owner_id
+    is_assignee = current_user.id == issue.assignee_id
+    is_reporter = current_user.id == issue.reporter_id
+
     # Permission check for moving/changing card status
     if move_data.status != issue.status:
-        if current_user.id != issue.assignee_id and current_user.id != issue.project.owner_id:
+        if not (is_admin_or_pm or is_owner or is_assignee or is_reporter):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the assignee or the project manager can move this card",
+                detail="Only the assignee, reporter, PM, or Admin can move this card",
             )
 
     issue.status = move_data.status

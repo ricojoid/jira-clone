@@ -19,8 +19,8 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = async (email, password) => {
-    const res = await authApi.login({ email, password });
+  const login = async (identifier, password) => {
+    const res = await authApi.login({ email: identifier, username: identifier, password });
     localStorage.setItem('token', res.data.access_token);
     const userRes = await authApi.getMe();
     setUser(userRes.data);
@@ -37,8 +37,12 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const roleLower = (user?.role || '').toLowerCase();
+  const isSuperAdmin = ['super_admin', 'admin', 'super admin', 'superadmin'].includes(roleLower);
+  const isPM = isSuperAdmin || roleLower === 'pm' || roleLower === 'project_manager';
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isPM, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

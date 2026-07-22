@@ -1,6 +1,4 @@
-import { createContext, useContext, useState, useMemo } from 'react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { getTheme } from '../theme/theme';
+import { createContext, useContext, useState } from 'react';
 
 const ThemeModeContext = createContext();
 
@@ -21,14 +19,9 @@ export function ThemeModeProvider({ children }) {
     });
   };
 
-  const theme = useMemo(() => getTheme(mode), [mode]);
-
   return (
     <ThemeModeContext.Provider value={{ mode, toggleTheme }}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
+      {children}
     </ThemeModeContext.Provider>
   );
 }

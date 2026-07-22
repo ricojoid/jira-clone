@@ -24,6 +24,11 @@ def list_projects(
 ):
     from app.models.issue import Issue
 
+    user_role = (getattr(current_user, 'role', '') or '').lower()
+    is_admin = user_role in ['super_admin', 'super admin', 'admin']
+    if is_admin:
+        return db.query(Project).all()
+
     # Get projects where user is owner or member or has assigned issues
     member_project_ids = (
         db.query(ProjectMember.project_id)
@@ -51,6 +56,13 @@ def create_project(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    user_role = (getattr(current_user, 'role', 'pm') or 'pm').lower()
+    if user_role not in ["pm", "project_manager", "admin", "super_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya user dengan role PM atau Super Admin yang dapat membuat project",
+        )
+
     # Check unique key
     if db.query(Project).filter(Project.key == project_data.key.upper()).first():
         raise HTTPException(status_code=400, detail="Project key already exists")
@@ -112,7 +124,9 @@ def update_project(
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    if project.owner_id != current_user.id:
+
+    is_super_admin = (getattr(current_user, 'role', '') or '').lower() == 'super_admin'
+    if not is_super_admin and project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     for field, value in project_data.model_dump(exclude_unset=True).items():
@@ -131,8 +145,12 @@ def delete_project(
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    if project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+
+    is_super_admin = (getattr(current_user, 'role', '') or '').lower() == 'super_admin'
+    if not is_super_admin and project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this project")
+
+    # Safely delete associated boards, sprints, issues, members if needed
     db.delete(project)
     db.commit()
 
@@ -159,12 +177,10 @@ def add_member(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Check project exists
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    # Check if already member
     existing = (
         db.query(ProjectMember)
         .filter(

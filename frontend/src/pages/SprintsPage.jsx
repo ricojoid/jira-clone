@@ -1,47 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Stack,
-  Chip,
-  IconButton,
-  LinearProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  TextField,
-  Grid,
-  Skeleton,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  PlayArrow as StartIcon,
-  CheckCircle as CompleteIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  CalendarToday as CalendarIcon,
-  FlagOutlined as GoalIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Plus, Play, CheckCircle2, Edit2, Trash2, Calendar, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sprintApi, issueApi } from '../api';
-
-const STATUS_COLORS = {
-  planned: { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' },
-  active: { bg: '#eff6ff', text: '#3b82f6', border: '#bfdbfe' },
-  completed: { bg: '#f0fdf4', text: '#22c55e', border: '#bbf7d0' },
-};
-
-const STATUS_LABELS = {
-  planned: 'Planned',
-  active: 'Active',
-  completed: 'Completed',
-};
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
+import Modal from '../components/ui/Modal';
 
 const initialSprintForm = {
   name: '',
@@ -52,18 +16,17 @@ const initialSprintForm = {
 
 export default function SprintsPage() {
   const { projectId } = useParams();
+  const { isPM } = useAuth();
 
   const [sprints, setSprints] = useState([]);
   const [issuesBySprintId, setIssuesBySprintId] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Create/Edit dialog
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSprint, setEditingSprint] = useState(null);
   const [sprintForm, setSprintForm] = useState(initialSprintForm);
   const [submitting, setSubmitting] = useState(false);
 
-  // Delete dialog
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingSprint, setDeletingSprint] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -79,7 +42,6 @@ export default function SprintsPage() {
       const sprintsData = sprintsRes.data || [];
       const issuesData = issuesRes.data || [];
 
-      // Group issues by sprint
       const grouped = {};
       sprintsData.forEach((s) => {
         grouped[s.id || s._id] = [];
@@ -105,6 +67,10 @@ export default function SprintsPage() {
   }, [fetchData]);
 
   const openCreateDialog = () => {
+    if (!isPM) {
+      toast.error('Only Project Managers can create sprints');
+      return;
+    }
     setEditingSprint(null);
     setSprintForm({
       ...initialSprintForm,
@@ -114,6 +80,10 @@ export default function SprintsPage() {
   };
 
   const openEditDialog = (sprint) => {
+    if (!isPM) {
+      toast.error('Only Project Managers can edit sprints');
+      return;
+    }
     setEditingSprint(sprint);
     setSprintForm({
       name: sprint.name || '',
@@ -124,13 +94,11 @@ export default function SprintsPage() {
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingSprint(null);
-    setSprintForm(initialSprintForm);
-  };
-
   const handleSubmit = async () => {
+    if (!isPM) {
+      toast.error('Only Project Managers can manage sprints');
+      return;
+    }
     if (!sprintForm.name.trim()) {
       toast.error('Sprint name is required');
       return;
@@ -154,7 +122,7 @@ export default function SprintsPage() {
         toast.success('Sprint created');
       }
 
-      handleCloseDialog();
+      setDialogOpen(false);
       fetchData();
     } catch (err) {
       console.error('Failed to save sprint:', err);
@@ -169,8 +137,7 @@ export default function SprintsPage() {
       await sprintApi.update(sprint.id || sprint._id, { status: 'active' });
       toast.success(`Sprint "${sprint.name}" started`);
       fetchData();
-    } catch (err) {
-      console.error('Failed to start sprint:', err);
+    } catch {
       toast.error('Failed to start sprint');
     }
   };
@@ -180,8 +147,7 @@ export default function SprintsPage() {
       await sprintApi.update(sprint.id || sprint._id, { status: 'completed' });
       toast.success(`Sprint "${sprint.name}" completed`);
       fetchData();
-    } catch (err) {
-      console.error('Failed to complete sprint:', err);
+    } catch {
       toast.error('Failed to complete sprint');
     }
   };
@@ -193,8 +159,7 @@ export default function SprintsPage() {
       await sprintApi.delete(deletingSprint.id || deletingSprint._id);
       toast.success('Sprint deleted');
       fetchData();
-    } catch (err) {
-      console.error('Failed to delete sprint:', err);
+    } catch {
       toast.error('Failed to delete sprint');
     } finally {
       setDeleting(false);
@@ -212,379 +177,191 @@ export default function SprintsPage() {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatDateRange = (start, end) => {
-    if (!start && !end) return 'No dates set';
-    return `${formatDate(start)} – ${formatDate(end)}`;
-  };
-
-  const fieldSx = {
-    '& .MuiOutlinedInput-root': {
-      '& fieldset': { borderColor: '#e2e8f0' },
-      '&:hover fieldset': { borderColor: '#cbd5e1' },
-      '&.Mui-focused fieldset': { borderColor: '#6366f1' },
-    },
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (loading) {
-    return (
-      <Box sx={{ p: 3, maxWidth: 1000, mx: 'auto' }}>
-        <Skeleton variant="text" width={200} height={36} />
-        <Grid container spacing={2} mt={1}>
-          {[1, 2, 3].map((i) => (
-            <Grid item xs={12} key={i}>
-              <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 2 }} />
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
-    );
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading sprints...</div>;
   }
 
   return (
-    <Box sx={{ p: 1, maxWidth: '100%', mx: 'auto' }}>
+    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="#1e293b">
-            Sprints
-          </Typography>
-          <Typography variant="body2" color="#64748b" mt={0.5}>
-            {sprints.length} sprint{sprints.length !== 1 ? 's' : ''}
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreateDialog}
-          sx={{
-            bgcolor: '#6366f1',
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            px: 3,
-            '&:hover': { bgcolor: '#4f46e5' },
-          }}
-        >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Sprint Management
+          </h2>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
+            {sprints.length} total sprints
+          </div>
+        </div>
+
+        <Button variant="primary" icon={Plus} onClick={openCreateDialog} disabled={!isPM}>
           Create Sprint
         </Button>
-      </Stack>
+      </div>
 
       {/* Sprint Cards */}
       {sprints.length === 0 ? (
-        <Paper
-          elevation={0}
-          sx={{
-            border: '1px solid #e2e8f0',
-            borderRadius: 2,
-            bgcolor: '#ffffff',
-            py: 8,
-            textAlign: 'center',
-          }}
-        >
-          <CalendarIcon sx={{ fontSize: 56, color: '#cbd5e1', mb: 2 }} />
-          <Typography variant="h6" color="#64748b" fontWeight={600}>
-            No sprints yet
-          </Typography>
-          <Typography variant="body2" color="#94a3b8" mt={1}>
-            Create your first sprint to organize your work
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={openCreateDialog}
-            sx={{
-              mt: 3,
-              textTransform: 'none',
-              borderColor: '#6366f1',
-              color: '#6366f1',
-              fontWeight: 600,
-              borderRadius: 2,
-              '&:hover': { borderColor: '#4f46e5', bgcolor: '#eef2ff' },
-            }}
-          >
-            Create Sprint
-          </Button>
-        </Paper>
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <Calendar size={48} style={{ color: 'var(--text-light)', marginBottom: 12 }} />
+          <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>No Sprints Created</h4>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 16 }}>
+            {isPM ? 'Create your first sprint to organize work iterations.' : 'No sprints have been created for this project.'}
+          </p>
+          {isPM && (
+            <Button variant="primary" icon={Plus} onClick={openCreateDialog}>
+              Create Sprint
+            </Button>
+          )}
+        </div>
       ) : (
-        <Stack spacing={2}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {sprints.map((sprint) => {
             const sprintId = sprint.id || sprint._id;
-            const statusStyle = STATUS_COLORS[sprint.status] || STATUS_COLORS.planned;
             const progress = getSprintProgress(sprintId);
 
             return (
-              <Paper
-                key={sprintId}
-                elevation={0}
-                sx={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 2,
-                  bgcolor: '#ffffff',
-                  overflow: 'hidden',
-                  transition: 'box-shadow 0.2s',
-                  '&:hover': { boxShadow: '0 2px 12px rgba(0,0,0,0.06)' },
-                }}
-              >
-                {/* Sprint Card Header */}
-                <Box sx={{ p: 2.5 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ flex: 1 }}>
-                      <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-                        <Typography variant="h6" fontWeight={700} color="#1e293b" fontSize={18}>
-                          {sprint.name}
-                        </Typography>
-                        <Chip
-                          label={STATUS_LABELS[sprint.status] || sprint.status}
-                          size="small"
-                          sx={{
-                            bgcolor: statusStyle.bg,
-                            color: statusStyle.text,
-                            border: `1px solid ${statusStyle.border}`,
-                            fontWeight: 600,
-                            fontSize: 12,
-                            height: 24,
-                            textTransform: 'capitalize',
-                          }}
-                        />
-                      </Stack>
+              <div key={sprintId} className="card card-hover" style={{ padding: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{sprint.name}</h3>
+                      <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'capitalize' }}>
+                        {sprint.status || 'planned'}
+                      </span>
+                    </div>
 
-                      {sprint.goal && (
-                        <Stack direction="row" alignItems="flex-start" spacing={0.5} mb={1}>
-                          <GoalIcon sx={{ color: '#94a3b8', fontSize: 16, mt: 0.25 }} />
-                          <Typography variant="body2" color="#64748b" fontSize={13}>
-                            {sprint.goal}
-                          </Typography>
-                        </Stack>
-                      )}
+                    {sprint.goal && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+                        <Target size={14} color="var(--primary)" />
+                        Goal: {sprint.goal}
+                      </div>
+                    )}
 
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <CalendarIcon sx={{ color: '#94a3b8', fontSize: 14 }} />
-                        <Typography variant="caption" color="#94a3b8">
-                          {formatDateRange(sprint.start_date, sprint.end_date)}
-                        </Typography>
-                      </Stack>
-                    </Box>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                      <Calendar size={14} />
+                      {sprint.start_date && sprint.end_date ? `${formatDate(sprint.start_date)} – ${formatDate(sprint.end_date)}` : 'Dates not set'}
+                    </div>
+                  </div>
 
-                    {/* Actions */}
-                    <Stack direction="row" spacing={0.5}>
-                      {sprint.status === 'planned' && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          startIcon={<StartIcon sx={{ fontSize: 16 }} />}
-                          onClick={() => handleStartSprint(sprint)}
-                          disabled={progress.total === 0}
-                          sx={{
-                            textTransform: 'none',
-                            bgcolor: '#6366f1',
-                            fontWeight: 600,
-                            fontSize: 12,
-                            borderRadius: 1.5,
-                            mr: 0.5,
-                            '&:hover': { bgcolor: '#4f46e5' },
-                          }}
-                        >
-                          Start
-                        </Button>
-                      )}
-                      {sprint.status === 'active' && (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          startIcon={<CompleteIcon sx={{ fontSize: 16 }} />}
-                          onClick={() => handleCompleteSprint(sprint)}
-                          sx={{
-                            textTransform: 'none',
-                            bgcolor: '#22c55e',
-                            fontWeight: 600,
-                            fontSize: 12,
-                            borderRadius: 1.5,
-                            mr: 0.5,
-                            '&:hover': { bgcolor: '#16a34a' },
-                          }}
-                        >
-                          Complete
-                        </Button>
-                      )}
-                      <IconButton
-                        size="small"
-                        onClick={() => openEditDialog(sprint)}
-                        sx={{ color: '#94a3b8', '&:hover': { color: '#6366f1' } }}
-                      >
-                        <EditIcon sx={{ fontSize: 18 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => { setDeletingSprint(sprint); setDeleteOpen(true); }}
-                        sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Stack>
-                  </Stack>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {sprint.status === 'planned' && (
+                      <Button variant="primary" size="sm" icon={Play} onClick={() => handleStartSprint(sprint)} disabled={progress.total === 0}>
+                        Start Sprint
+                      </Button>
+                    )}
+                    {sprint.status === 'active' && (
+                      <Button variant="outline" size="sm" icon={CheckCircle2} onClick={() => handleCompleteSprint(sprint)}>
+                        Complete Sprint
+                      </Button>
+                    )}
+                    {isPM && (
+                      <>
+                        <Button variant="ghost" size="sm" icon={Edit2} onClick={() => openEditDialog(sprint)} />
+                        <Button variant="ghost" size="sm" icon={Trash2} onClick={() => { setDeletingSprint(sprint); setDeleteOpen(true); }} />
+                      </>
+                    )}
+                  </div>
+                </div>
 
-                  {/* Progress */}
-                  <Box sx={{ mt: 2 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
-                      <Typography variant="caption" color="#64748b" fontWeight={600}>
-                        Progress
-                      </Typography>
-                      <Typography variant="caption" color="#64748b">
-                        {progress.done} / {progress.total} issues done
-                      </Typography>
-                    </Stack>
-                    <LinearProgress
-                      variant="determinate"
-                      value={progress.pct}
-                      sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        bgcolor: '#f1f5f9',
-                        '& .MuiLinearProgress-bar': {
-                          borderRadius: 3,
-                          bgcolor: progress.pct === 100 ? '#22c55e' : '#6366f1',
-                        },
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </Paper>
+                {/* Progress Bar */}
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.775rem', marginBottom: 6 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Sprint Progress</span>
+                    <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                      {progress.done} of {progress.total} done ({progress.pct}%)
+                    </span>
+                  </div>
+                  <div style={{ height: 6, borderRadius: 3, backgroundColor: 'var(--bg-subtle)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress.pct}%`, backgroundColor: progress.pct === 100 ? '#16a34a' : 'var(--primary)', transition: 'width 0.3s' }} />
+                  </div>
+                </div>
+              </div>
             );
           })}
-        </Stack>
+        </div>
       )}
 
-      {/* Create / Edit Sprint Dialog */}
-      <Dialog
+      {/* Create / Edit Sprint Modal */}
+      <Modal
         open={dialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        onClose={() => setDialogOpen(false)}
+        title={editingSprint ? 'Edit Sprint' : 'Create Sprint'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={submitting || !sprintForm.name.trim()}>
+              {submitting ? 'Saving...' : editingSprint ? 'Save Changes' : 'Create Sprint'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" fontWeight={700} color="#1e293b">
-            {editingSprint ? 'Edit Sprint' : 'Create Sprint'}
-          </Typography>
-          <IconButton onClick={handleCloseDialog} size="small">
-            <CloseIcon sx={{ color: '#94a3b8' }} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2.5} mt={1}>
-            <TextField
-              label="Sprint Name"
-              value={sprintForm.name}
-              onChange={(e) => setSprintForm((p) => ({ ...p, name: e.target.value }))}
-              fullWidth
-              required
-              autoFocus
-              sx={fieldSx}
-            />
-            <TextField
-              label="Goal"
-              value={sprintForm.goal}
-              onChange={(e) => setSprintForm((p) => ({ ...p, goal: e.target.value }))}
-              fullWidth
-              multiline
-              minRows={2}
-              maxRows={4}
-              placeholder="What is the sprint goal?"
-              sx={fieldSx}
-            />
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Start Date"
-                type="date"
-                value={sprintForm.start_date}
-                onChange={(e) => setSprintForm((p) => ({ ...p, start_date: e.target.value }))}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                sx={fieldSx}
-              />
-              <TextField
-                label="End Date"
-                type="date"
-                value={sprintForm.end_date}
-                onChange={(e) => setSprintForm((p) => ({ ...p, end_date: e.target.value }))}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                sx={fieldSx}
-              />
-            </Stack>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button
-            onClick={handleCloseDialog}
-            sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={submitting || !sprintForm.name.trim()}
-            sx={{
-              textTransform: 'none',
-              bgcolor: '#6366f1',
-              fontWeight: 600,
-              px: 4,
-              borderRadius: 2,
-              '&:hover': { bgcolor: '#4f46e5' },
-            }}
-          >
-            {submitting
-              ? editingSprint ? 'Saving...' : 'Creating...'
-              : editingSprint ? 'Save Changes' : 'Create Sprint'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <div className="form-group">
+          <label className="form-label">Sprint Name *</label>
+          <input
+            className="form-input"
+            type="text"
+            placeholder="Sprint 1"
+            value={sprintForm.name}
+            onChange={(e) => setSprintForm((p) => ({ ...p, name: e.target.value }))}
+            autoFocus
+          />
+        </div>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
+        <div className="form-group">
+          <label className="form-label">Sprint Goal</label>
+          <textarea
+            className="form-textarea"
+            rows={3}
+            placeholder="What is the objective of this sprint?"
+            value={sprintForm.goal}
+            onChange={(e) => setSprintForm((p) => ({ ...p, goal: e.target.value }))}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-group">
+            <label className="form-label">Start Date</label>
+            <input
+              className="form-input"
+              type="date"
+              value={sprintForm.start_date}
+              onChange={(e) => setSprintForm((p) => ({ ...p, start_date: e.target.value }))}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">End Date</label>
+            <input
+              className="form-input"
+              type="date"
+              value={sprintForm.end_date}
+              onChange={(e) => setSprintForm((p) => ({ ...p, end_date: e.target.value }))}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
         open={deleteOpen}
-        onClose={() => { setDeleteOpen(false); setDeletingSprint(null); }}
-        PaperProps={{ sx: { borderRadius: 3, maxWidth: 420 } }}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete Sprint"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDeleteSprint} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle sx={{ fontWeight: 700, color: '#1e293b' }}>
-          Delete Sprint
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText color="#64748b">
-            Are you sure you want to delete <strong>{deletingSprint?.name}</strong>? Issues in this
-            sprint will be moved to the backlog.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={() => { setDeleteOpen(false); setDeletingSprint(null); }}
-            sx={{ textTransform: 'none', color: '#64748b' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteSprint}
-            variant="contained"
-            disabled={deleting}
-            sx={{
-              textTransform: 'none',
-              bgcolor: '#ef4444',
-              fontWeight: 600,
-              '&:hover': { bgcolor: '#dc2626' },
-            }}
-          >
-            {deleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          Are you sure you want to delete <strong>{deletingSprint?.name}</strong>? Tasks in this sprint will return to the backlog.
+        </p>
+      </Modal>
+    </div>
   );
 }

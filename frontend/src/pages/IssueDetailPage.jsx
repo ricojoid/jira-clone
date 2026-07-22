@@ -1,73 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  TextField,
-  Select,
-  MenuItem,
-  Avatar,
-  Chip,
-  Button,
-  IconButton,
-  Paper,
-  Divider,
-  Stack,
-  Breadcrumbs,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Skeleton,
-  Autocomplete,
-} from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Send as SendIcon,
-  NavigateNext as BreadcrumbIcon,
-  BugReport as BugIcon,
-  TaskAlt as TaskIcon,
-  AutoStories as StoryIcon,
-  Bolt as EpicIcon,
-  AccountTree as SubtaskIcon,
-} from '@mui/icons-material';
+import { ArrowLeft, Trash2, Edit2, Send, Plus, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { issueApi, userApi, sprintApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
+import Avatar from '../components/ui/Avatar';
+import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META } from '../components/ui/Badge';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
-
-const STATUS_OPTIONS = [
-  { value: 'todo', label: 'To Do', color: '#94a3b8' },
-  { value: 'in_progress', label: 'In Progress', color: '#3b82f6' },
-  { value: 'in_review', label: 'In Review', color: '#f59e0b' },
-  { value: 'done', label: 'Done', color: '#22c55e' },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: 'highest', label: 'Highest', color: '#ef4444' },
-  { value: 'high', label: 'High', color: '#f97316' },
-  { value: 'medium', label: 'Medium', color: '#f59e0b' },
-  { value: 'low', label: 'Low', color: '#3b82f6' },
-  { value: 'lowest', label: 'Lowest', color: '#22c55e' },
-];
-
-const TYPE_OPTIONS = [
-  { value: 'bug', label: 'Bug', icon: <BugIcon sx={{ color: '#ef4444', fontSize: 18 }} /> },
-  { value: 'task', label: 'Task', icon: <TaskIcon sx={{ color: '#3b82f6', fontSize: 18 }} /> },
-  { value: 'story', label: 'Story', icon: <StoryIcon sx={{ color: '#22c55e', fontSize: 18 }} /> },
-  { value: 'epic', label: 'Epic', icon: <EpicIcon sx={{ color: '#a855f7', fontSize: 18 }} /> },
-  { value: 'subtask', label: 'Subtask', icon: <SubtaskIcon sx={{ color: '#64748b', fontSize: 18 }} /> },
-];
-
-const sidebarFieldSx = {
-  '& .MuiOutlinedInput-root': {
-    bgcolor: '#f8fafc',
-    '& fieldset': { borderColor: '#e2e8f0' },
-    '&:hover fieldset': { borderColor: '#cbd5e1' },
-  },
-};
 
 export default function IssueDetailPage() {
   const { issueId } = useParams();
@@ -80,20 +20,15 @@ export default function IssueDetailPage() {
   const [sprints, setSprints] = useState([]);
   const [labels, setLabels] = useState([]);
 
-  // Editable fields
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [descDraft, setDescDraft] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
 
-  // Comments
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
 
-  // Delete
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [subtaskDialogOpen, setSubtaskDialogOpen] = useState(false);
 
   const fetchIssue = useCallback(async () => {
@@ -123,7 +58,7 @@ export default function IssueDetailPage() {
       }
     } catch (err) {
       console.error('Failed to fetch issue:', err);
-      toast.error('Failed to load issue');
+      toast.error('Failed to load issue details');
     } finally {
       setLoading(false);
     }
@@ -205,17 +140,14 @@ export default function IssueDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this issue?')) return;
     try {
-      setDeleting(true);
       await issueApi.delete(issueId);
       toast.success('Issue deleted');
-      navigate(`/issues/${issue?.project_id}`);
+      navigate(`/board/${issue?.project_id}`);
     } catch (err) {
       console.error('Failed to delete:', err);
       toast.error('Failed to delete issue');
-    } finally {
-      setDeleting(false);
-      setDeleteOpen(false);
     }
   };
 
@@ -231,659 +163,310 @@ export default function IssueDetailPage() {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
-        <Skeleton variant="text" width={300} height={32} />
-        <Skeleton variant="text" width={500} height={48} sx={{ mt: 2 }} />
-        <Stack direction="row" spacing={3} mt={3}>
-          <Box flex={0.65}>
-            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-          </Box>
-          <Box flex={0.35}>
-            <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 2 }} />
-          </Box>
-        </Stack>
-      </Box>
-    );
+    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading task details...</div>;
   }
 
   if (!issue) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center', mt: 8 }}>
-        <Typography variant="h6" color="#64748b">Issue not found</Typography>
-        <Button
-          component={Link}
-          to="/dashboard"
-          sx={{ mt: 2, color: '#6366f1', textTransform: 'none' }}
-        >
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+        <h3>Issue not found</h3>
+        <Link to="/dashboard" style={{ color: 'var(--primary)', fontWeight: 700, marginTop: 12, display: 'inline-block' }}>
           Back to Dashboard
-        </Button>
-      </Box>
+        </Link>
+      </div>
     );
   }
 
-  const statusMeta = STATUS_OPTIONS.find((s) => s.value === issue.status) || STATUS_OPTIONS[0];
-  const typeMeta = TYPE_OPTIONS.find((t) => t.value === (issue.issue_type || issue.type)) || TYPE_OPTIONS[1];
+  const subtasks = issue?.children || [];
+  const completedSubtasks = subtasks.filter((s) => s.status === 'done').length;
+  const subtaskProgress = subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0;
 
   return (
-    <Box sx={{ p: 1, maxWidth: '100%', mx: 'auto' }}>
-      {/* Breadcrumbs */}
-      <Breadcrumbs separator={<BreadcrumbIcon fontSize="small" />} sx={{ mb: 2 }}>
-        <Typography
-          component={Link}
-          to={`/issues/${issue?.project_id}`}
-          sx={{ color: '#6366f1', textDecoration: 'none', fontSize: 14, '&:hover': { textDecoration: 'underline' } }}
-        >
-          Issues
-        </Typography>
-        <Typography color="#64748b" fontSize={14}>
-          {issue.issue_key || issue.key}
-        </Typography>
-      </Breadcrumbs>
+    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Top Action Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+          <Link to={`/board/${issue.project_id}`} style={{ color: 'var(--primary)', fontWeight: 700 }}>
+            Board
+          </Link>
+          <span style={{ color: 'var(--text-light)' }}>/</span>
+          <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{issue.issue_key}</span>
+        </div>
 
-      {/* Issue Key & Type */}
-      <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-        {typeMeta.icon}
-        <Typography variant="body2" color="#64748b" fontWeight={600}>
-          {issue.issue_key || issue.key}
-        </Typography>
-      </Stack>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(`/board/${issue.project_id}`)}>
+            Back to Board
+          </Button>
+          <Button variant="danger" icon={Trash2} onClick={handleDelete}>
+            Delete Issue
+          </Button>
+        </div>
+      </div>
 
-      {/* Two-column layout */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-        {/* Main Content - Left */}
-        <Box flex={0.65}>
-          {/* Title */}
-          {editingTitle ? (
-            <TextField
-              value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
-              onBlur={handleTitleSave}
-              onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-              autoFocus
-              fullWidth
-              variant="standard"
-              InputProps={{
-                sx: { fontSize: 24, fontWeight: 700, color: '#1e293b' },
-                disableUnderline: false,
-              }}
-            />
-          ) : (
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              color="#1e293b"
-              onClick={() => setEditingTitle(true)}
-              sx={{
-                cursor: 'pointer',
-                py: 0.5,
-                px: 1,
-                mx: -1,
-                borderRadius: 1,
-                '&:hover': { bgcolor: '#f1f5f9' },
-              }}
-            >
-              {issue.title}
-            </Typography>
-          )}
+      {/* 2-Column Content */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+        {/* Main Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Header Title */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <TypeIcon type={issue.issue_type || issue.type} size={20} />
+              <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1rem' }}>{issue.issue_key}</span>
+            </div>
 
-          {/* Description */}
-          <Paper
-            elevation={0}
-            sx={{ mt: 3, p: 2.5, border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
-          >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
-              <Typography variant="subtitle2" fontWeight={700} color="#475569">
-                Description
-              </Typography>
+            {editingTitle ? (
+              <input
+                className="form-input"
+                style={{ fontSize: '1.5rem', fontWeight: 800 }}
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+                autoFocus
+              />
+            ) : (
+              <h1
+                onClick={() => setEditingTitle(true)}
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  padding: '6px 10px',
+                  margin: '-6px -10px',
+                  borderRadius: 'var(--radius-md)',
+                }}
+                className="card-hover"
+              >
+                {issue.title}
+              </h1>
+            )}
+          </div>
+
+          {/* Description Card */}
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Description</h3>
               {!editingDesc && (
-                <IconButton size="small" onClick={() => setEditingDesc(true)}>
-                  <EditIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
-                </IconButton>
+                <Button variant="ghost" size="sm" icon={Edit2} onClick={() => setEditingDesc(true)}>
+                  Edit
+                </Button>
               )}
-            </Stack>
+            </div>
+
             {editingDesc ? (
-              <Box>
-                <TextField
+              <div>
+                <textarea
+                  className="form-textarea"
+                  rows={6}
                   value={descDraft}
                   onChange={(e) => setDescDraft(e.target.value)}
-                  multiline
-                  minRows={4}
-                  maxRows={12}
-                  fullWidth
-                  placeholder="Add a description..."
-                  sx={sidebarFieldSx}
                 />
-                <Stack direction="row" spacing={1} mt={1.5} justifyContent="flex-end">
-                  <Button
-                    size="small"
-                    onClick={() => { setEditingDesc(false); setDescDraft(issue.description || ''); }}
-                    sx={{ textTransform: 'none', color: '#64748b' }}
-                  >
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+                  <Button variant="secondary" size="sm" onClick={() => setEditingDesc(false)}>
                     Cancel
                   </Button>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    onClick={handleDescSave}
-                    sx={{ textTransform: 'none', bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' } }}
-                  >
+                  <Button variant="primary" size="sm" onClick={handleDescSave}>
                     Save
                   </Button>
-                </Stack>
-              </Box>
+                </div>
+              </div>
             ) : (
-              <Typography
-                variant="body2"
-                color={issue.description ? '#475569' : '#94a3b8'}
+              <div
                 onClick={() => setEditingDesc(true)}
-                sx={{
+                style={{
+                  padding: 16,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px dashed var(--border-color)',
                   cursor: 'pointer',
+                  minHeight: 80,
                   whiteSpace: 'pre-wrap',
-                  minHeight: 60,
-                  p: 1,
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#f8fafc' },
+                  color: issue.description ? 'var(--text-body)' : 'var(--text-light)',
+                  fontSize: '0.9rem',
                 }}
               >
-                {issue.description || 'Click to add a description...'}
-              </Typography>
+                {issue.description || 'Click to add a detailed description...'}
+              </div>
             )}
-          </Paper>
+          </div>
 
-          {/* Child Issues / Subtasks */}
-          <Paper
-            elevation={0}
-            sx={{ mt: 3, p: 2.5, border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
-          >
-            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="subtitle2" fontWeight={700} color="#475569">
-                {issue.issue_type === 'epic' ? 'Linked Issues' : 'Subtasks'} ({issue.children?.length || 0})
-              </Typography>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setSubtaskDialogOpen(true)}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: 12,
-                  borderColor: '#c7d2fe',
-                  color: '#6366f1',
-                  '&:hover': { borderColor: '#6366f1', bgcolor: '#eef2ff' },
-                }}
-              >
-                + {issue.issue_type === 'epic' ? 'Add Issue' : 'Add Subtask'}
+          {/* Subtasks */}
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>
+                  {issue.issue_type === 'epic' ? 'Linked Issues' : 'Subtasks'} ({subtasks.length})
+                </h3>
+                {subtasks.length > 0 && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {completedSubtasks} of {subtasks.length} done ({Math.round(subtaskProgress)}%)
+                  </span>
+                )}
+              </div>
+              <Button variant="outline" size="sm" icon={Plus} onClick={() => setSubtaskDialogOpen(true)}>
+                {issue.issue_type === 'epic' ? 'Add Issue' : 'Add Subtask'}
               </Button>
-            </Stack>
-            {issue.children?.length > 0 ? (
-              <Stack spacing={1}>
-                {issue.children.map((child) => {
-                  const childType = TYPE_OPTIONS.find((t) => t.value === child.issue_type) || TYPE_OPTIONS[1];
-                  return (
-                    <Box
-                      key={child.id}
-                      onClick={() => navigate(`/issue/${child.id}`)}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        p: 1.5,
-                        borderRadius: 1.5,
-                        border: '1px solid #f1f5f9',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: '#f8fafc' },
-                      }}
-                    >
-                      {childType.icon}
-                      <Typography variant="body2" fontWeight={600} color="#64748b" fontSize={13}>
-                        {child.issue_key}
-                      </Typography>
-                      <Typography variant="body2" color="#1e293b" fontSize={13} noWrap sx={{ flex: 1 }}>
-                        {child.title}
-                      </Typography>
-                      <Chip
-                        label={STATUS_OPTIONS.find((s) => s.value === child.status)?.label || child.status}
-                        size="small"
-                        sx={{
-                          bgcolor: `${STATUS_OPTIONS.find((s) => s.value === child.status)?.color || '#94a3b8'}15`,
-                          color: STATUS_OPTIONS.find((s) => s.value === child.status)?.color || '#94a3b8',
-                          fontWeight: 600,
-                          fontSize: 11,
-                        }}
-                      />
-                    </Box>
-                  );
-                })}
-              </Stack>
+            </div>
+
+            {subtasks.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {subtasks.map((child) => (
+                  <div
+                    key={child.id}
+                    onClick={() => navigate(`/issue/${child.id}`)}
+                    className="card card-hover"
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                  >
+                    <TypeIcon type={child.issue_type} size={16} />
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>
+                      {child.issue_key}
+                    </span>
+                    <span style={{ flex: 1, fontSize: '0.875rem', textDecoration: child.status === 'done' ? 'line-through' : 'none' }}>
+                      {child.title}
+                    </span>
+                    <StatusBadge status={child.status} />
+                  </div>
+                ))}
+              </div>
             ) : (
-              <Typography variant="body2" color="#94a3b8">
-                No {issue.issue_type === 'epic' ? 'linked issues' : 'subtasks'} yet.
-              </Typography>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                No {issue.issue_type === 'epic' ? 'linked issues' : 'subtasks'} added.
+              </div>
             )}
-          </Paper>
+          </div>
 
           {/* Comments */}
-          <Paper
-            elevation={0}
-            sx={{ mt: 3, p: 2.5, border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
-          >
-            <Typography variant="subtitle2" fontWeight={700} color="#475569" mb={2}>
+          <div className="card" style={{ padding: 24 }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>
               Comments ({comments.length})
-            </Typography>
+            </h3>
 
             {comments.length === 0 ? (
-              <Typography variant="body2" color="#94a3b8" mb={2}>
-                No comments yet. Be the first to comment.
-              </Typography>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 20 }}>
+                No comments yet.
+              </div>
             ) : (
-              <Stack spacing={2} mb={2}>
-                {comments.map((comment, idx) => (
-                  <Box
-                    key={comment.id || comment._id || idx}
-                    sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9' }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="center" mb={1}>
-                      <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: '#6366f1' }}>
-                        {(comment.author?.full_name || comment.author?.username || comment.author?.name)?.[0]?.toUpperCase() || '?'}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight={600} color="#334155" fontSize={13}>
-                          {comment.author?.full_name || comment.author?.username || comment.author?.name || comment.author?.email || 'Unknown'}
-                        </Typography>
-                        <Typography variant="caption" color="#94a3b8">
-                          {formatDate(comment.created_at)}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="body2" color="#475569" sx={{ whiteSpace: 'pre-wrap', ml: 5 }}>
-                      {comment.content}
-                    </Typography>
-                  </Box>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                {comments.map((c, idx) => (
+                  <div key={c.id || idx} style={{ padding: 14, backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} size={26} />
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                        {c.author?.full_name || c.author?.username || c.author?.name || 'User'}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {formatDate(c.created_at)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-body)', whiteSpace: 'pre-wrap', paddingLeft: 36 }}>
+                      {c.content}
+                    </div>
+                  </div>
                 ))}
-              </Stack>
+              </div>
             )}
 
-            <Divider sx={{ my: 2 }} />
-
-            {/* Add Comment */}
-            <Stack direction="row" spacing={1.5} alignItems="flex-start">
-              <Avatar sx={{ width: 32, height: 32, fontSize: 13, bgcolor: '#6366f1', mt: 0.5 }}>
-                {(user?.full_name || user?.username || user?.name)?.[0]?.toUpperCase() || '?'}
-              </Avatar>
-              <Box flex={1}>
-                <TextField
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Avatar name={user?.full_name || user?.username || user?.name} size={34} />
+              <div style={{ flex: 1 }}>
+                <textarea
+                  className="form-textarea"
+                  rows={3}
+                  placeholder="Write a comment..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  multiline
-                  minRows={2}
-                  maxRows={6}
-                  fullWidth
-                  placeholder="Add a comment..."
-                  sx={sidebarFieldSx}
                 />
-                <Box sx={{ mt: 1, textAlign: 'right' }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    endIcon={<SendIcon sx={{ fontSize: 14 }} />}
-                    onClick={handleAddComment}
-                    disabled={!commentText.trim() || submittingComment}
-                    sx={{
-                      textTransform: 'none',
-                      bgcolor: '#6366f1',
-                      fontWeight: 600,
-                      borderRadius: 1.5,
-                      '&:hover': { bgcolor: '#4f46e5' },
-                    }}
-                  >
-                    Comment
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                  <Button variant="primary" size="sm" icon={Send} onClick={handleAddComment} disabled={!commentText.trim() || submittingComment}>
+                    Add Comment
                   </Button>
-                </Box>
-              </Box>
-            </Stack>
-          </Paper>
-        </Box>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Sidebar - Right */}
-        <Box flex={0.35}>
-          <Paper
-            elevation={0}
-            sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
-          >
-            <Stack spacing={2.5}>
-              {/* Status */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Status
-                </Typography>
-                <Select
-                  value={issue.status || 'todo'}
-                  onChange={(e) => updateField('status', e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={{
-                    bgcolor: `${statusMeta.color}15`,
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: `${statusMeta.color}40` },
-                    fontWeight: 600,
-                    color: statusMeta.color,
-                    fontSize: 14,
-                  }}
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <MenuItem key={s.value} value={s.value}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.color }} />
-                        <span>{s.label}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+        {/* Sidebar Controls */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, borderBottom: '1px solid var(--border-light)', paddingBottom: 12 }}>
+              Attributes
+            </h3>
 
-              {/* Assignee */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Assignee
-                </Typography>
-                <Select
-                  value={issue.assignee_id || ''}
-                  onChange={(e) => updateField('assignee_id', e.target.value || null)}
-                  fullWidth
-                  size="small"
-                  displayEmpty
-                  sx={sidebarFieldSx}
-                >
-                  <MenuItem value="">Unassigned</MenuItem>
-                  {users.map((u) => (
-                    <MenuItem key={u.id || u._id} value={u.id || u._id}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Avatar sx={{ width: 22, height: 22, fontSize: 10, bgcolor: '#6366f1' }}>
-                          {(u.full_name || u.username || u.name)?.[0]?.toUpperCase() || '?'}
-                        </Avatar>
-                        <span>{u.full_name || u.username || u.name || u.email}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-select" value={issue.status || 'todo'} onChange={(e) => updateField('status', e.target.value)}>
+                {Object.entries(STATUS_META).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
 
-              {/* Priority */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Priority
-                </Typography>
-                <Select
-                  value={issue.priority || 'medium'}
-                  onChange={(e) => updateField('priority', e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={sidebarFieldSx}
-                >
-                  {PRIORITY_OPTIONS.map((p) => (
-                    <MenuItem key={p.value} value={p.value}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: p.color }} />
-                        <span>{p.label}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+            <div className="form-group">
+              <label className="form-label">Assignee</label>
+              <select className="form-select" value={issue.assignee_id || ''} onChange={(e) => updateField('assignee_id', e.target.value || null)}>
+                <option value="">Unassigned</option>
+                {users.map((u) => (
+                  <option key={u.id || u._id} value={u.id || u._id}>
+                    {u.full_name || u.username || u.name || u.email}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              {/* Type */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Type
-                </Typography>
-                <Select
-                  value={issue.issue_type || issue.type || 'task'}
-                  onChange={(e) => updateField('type', e.target.value)}
-                  fullWidth
-                  size="small"
-                  sx={sidebarFieldSx}
-                >
-                  {TYPE_OPTIONS.map((t) => (
-                    <MenuItem key={t.value} value={t.value}>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        {t.icon}
-                        <span>{t.label}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <select className="form-select" value={issue.priority || 'medium'} onChange={(e) => updateField('priority', e.target.value)}>
+                {Object.entries(PRIORITY_META).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
 
-              {/* Sprint */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Sprint
-                </Typography>
-                <Select
-                  value={issue.sprint_id || ''}
-                  onChange={(e) => updateField('sprint_id', e.target.value || null)}
-                  fullWidth
-                  size="small"
-                  displayEmpty
-                  sx={sidebarFieldSx}
-                >
-                  <MenuItem value="">No Sprint</MenuItem>
-                  {sprints.map((s) => (
-                    <MenuItem key={s.id || s._id} value={s.id || s._id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
+            <div className="form-group">
+              <label className="form-label">Issue Type</label>
+              <select className="form-select" value={issue.issue_type || issue.type || 'task'} onChange={(e) => updateField('type', e.target.value)}>
+                {Object.entries(TYPE_META).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
 
-              {/* Parent Issue */}
-              {issue.parent && (
-                <Box>
-                  <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                    Parent Issue
-                  </Typography>
-                  <Box
-                    onClick={() => navigate(`/issue/${issue.parent_id}`)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      p: 1,
-                      borderRadius: 1,
-                      border: '1px solid #e2e8f0',
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: '#f8fafc' },
-                    }}
-                  >
-                    {(TYPE_OPTIONS.find((t) => t.value === issue.parent.issue_type) || TYPE_OPTIONS[1]).icon}
-                    <Typography variant="body2" fontWeight={600} color="#6366f1" fontSize={13}>
-                      {issue.parent.issue_key}
-                    </Typography>
-                    <Typography variant="body2" color="#475569" fontSize={13} noWrap>
-                      {issue.parent.title}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
+            <div className="form-group">
+              <label className="form-label">Sprint</label>
+              <select className="form-select" value={issue.sprint_id || ''} onChange={(e) => updateField('sprint_id', e.target.value || null)}>
+                <option value="">No Sprint (Backlog)</option>
+                {sprints.map((s) => (
+                  <option key={s.id || s._id} value={s.id || s._id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
 
-              {/* Story Points */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Story Points
-                </Typography>
-                <TextField
-                  type="number"
-                  value={issue.story_points ?? ''}
-                  onChange={(e) => {
-                    const val = e.target.value === '' ? null : Number(e.target.value);
-                    updateField('story_points', val);
-                  }}
-                  fullWidth
-                  size="small"
-                  placeholder="0"
-                  inputProps={{ min: 0, max: 100 }}
-                  sx={sidebarFieldSx}
-                />
-              </Box>
-
-              {/* Labels */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Labels
-                </Typography>
-                <Autocomplete
-                  multiple
-                  freeSolo
-                  options={labels.map((l) => l.name || l)}
-                  value={(issue.labels || []).map((l) => typeof l === 'string' ? l : l.name)}
-                  onChange={(_, newVal) => updateField('labels', newVal)}
-                  renderTags={(value, getTagProps) =>
-                    value.map((label, index) => (
-                      <Chip
-                        {...getTagProps({ index })}
-                        key={typeof label === 'string' ? label : label.name}
-                        label={typeof label === 'string' ? label : label.name}
-                        size="small"
-                        sx={{
-                          bgcolor: '#eef2ff',
-                          color: '#6366f1',
-                          fontWeight: 500,
-                          fontSize: 12,
-                          border: '1px solid #c7d2fe',
-                        }}
-                      />
-                    ))
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} size="small" placeholder="Add labels" sx={sidebarFieldSx} />
-                  )}
-                />
-              </Box>
-
-              {/* Due Date */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Due Date
-                </Typography>
-                <TextField
-                  type="date"
-                  value={issue.due_date ? issue.due_date.slice(0, 10) : ''}
-                  onChange={(e) => updateField('due_date', e.target.value || null)}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  sx={sidebarFieldSx}
-                />
-              </Box>
-
-              <Divider />
-
-              {/* Reporter */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Reporter
-                </Typography>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: 11, bgcolor: '#8b5cf6' }}>
-                    {(issue.reporter?.full_name || issue.reporter?.username || issue.reporter?.name)?.[0]?.toUpperCase() || '?'}
-                  </Avatar>
-                  <Typography variant="body2" color="#475569" fontSize={13}>
-                    {issue.reporter?.full_name || issue.reporter?.username || issue.reporter?.name || issue.reporter?.email || 'Unknown'}
-                  </Typography>
-                </Stack>
-              </Box>
-
-              {/* Dates */}
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Created
-                </Typography>
-                <Typography variant="body2" color="#64748b" fontSize={13}>
-                  {formatDate(issue.created_at)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
-                  Updated
-                </Typography>
-                <Typography variant="body2" color="#64748b" fontSize={13}>
-                  {formatDate(issue.updated_at)}
-                </Typography>
-              </Box>
-
-              <Divider />
-
-              {/* Delete */}
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
-                onClick={() => setDeleteOpen(true)}
-                fullWidth
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  borderColor: '#fca5a5',
-                  color: '#ef4444',
-                  '&:hover': { bgcolor: '#fef2f2', borderColor: '#ef4444' },
-                }}
-              >
-                Delete Issue
-              </Button>
-            </Stack>
-          </Paper>
-        </Box>
-      </Stack>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        PaperProps={{ sx: { borderRadius: 3, maxWidth: 420 } }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, color: '#1e293b' }}>
-          Delete Issue
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText color="#64748b">
-            Are you sure you want to delete <strong>{issue.issue_key || issue.key}</strong>? This action cannot be undone
-            and all comments will be permanently removed.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={() => setDeleteOpen(false)}
-            sx={{ textTransform: 'none', color: '#64748b' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDelete}
-            variant="contained"
-            disabled={deleting}
-            sx={{
-              textTransform: 'none',
-              bgcolor: '#ef4444',
-              fontWeight: 600,
-              '&:hover': { bgcolor: '#dc2626' },
-            }}
-          >
-            {deleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <div className="form-group">
+              <label className="form-label">Story Points</label>
+              <input
+                className="form-input"
+                type="number"
+                min={0}
+                max={100}
+                value={issue.story_points ?? ''}
+                onChange={(e) => updateField('story_points', e.target.value === '' ? null : Number(e.target.value))}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <CreateIssueDialog
         open={subtaskDialogOpen}
         onClose={() => setSubtaskDialogOpen(false)}
-        projectId={issue.project_id}
-        parentId={issue.id}
+        projectId={issue?.project_id}
+        parentId={issue?.id}
         onCreated={() => {
           setSubtaskDialogOpen(false);
           fetchIssue();
         }}
       />
-    </Box>
+    </div>
   );
 }

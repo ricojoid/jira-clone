@@ -1,87 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Paper,
-  Chip,
-  Avatar,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Button,
-  InputAdornment,
-  Stack,
-  Skeleton,
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  Add as AddIcon,
-  BugReport as BugIcon,
-  TaskAlt as TaskIcon,
-  AutoStories as StoryIcon,
-  Bolt as EpicIcon,
-  AccountTree as SubtaskIcon,
-  InboxOutlined as EmptyIcon,
-} from '@mui/icons-material';
+import { Search, Plus, Inbox, Filter } from 'lucide-react';
 import { projectApi, issueApi } from '../api';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
-
-const STATUS_COLORS = {
-  todo: '#94a3b8',
-  in_progress: '#3b82f6',
-  in_review: '#f59e0b',
-  done: '#22c55e',
-};
-
-const STATUS_LABELS = {
-  todo: 'To Do',
-  in_progress: 'In Progress',
-  in_review: 'In Review',
-  done: 'Done',
-};
-
-const PRIORITY_COLORS = {
-  highest: '#ef4444',
-  high: '#f97316',
-  medium: '#f59e0b',
-  low: '#3b82f6',
-  lowest: '#22c55e',
-};
-
-const PRIORITY_LABELS = {
-  highest: 'Highest',
-  high: 'High',
-  medium: 'Medium',
-  low: 'Low',
-  lowest: 'Lowest',
-};
-
-const TYPE_ICONS = {
-  bug: <BugIcon sx={{ color: '#ef4444', fontSize: 20 }} />,
-  task: <TaskIcon sx={{ color: '#3b82f6', fontSize: 20 }} />,
-  story: <StoryIcon sx={{ color: '#22c55e', fontSize: 20 }} />,
-  epic: <EpicIcon sx={{ color: '#a855f7', fontSize: 20 }} />,
-  subtask: <SubtaskIcon sx={{ color: '#64748b', fontSize: 20 }} />,
-};
-
-const STATUSES = ['todo', 'in_progress', 'in_review', 'done'];
-const PRIORITIES = ['highest', 'high', 'medium', 'low', 'lowest'];
-const TYPES = ['bug', 'task', 'story', 'epic', 'subtask'];
+import Button from '../components/ui/Button';
+import Avatar from '../components/ui/Avatar';
+import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META } from '../components/ui/Badge';
 
 export default function IssuesPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isPM } = useAuth();
 
   const [issues, setIssues] = useState([]);
   const [project, setProject] = useState(null);
@@ -89,14 +21,12 @@ export default function IssuesPage() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Filters
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
 
-  // Sorting
   const [sortBy, setSortBy] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -113,6 +43,7 @@ export default function IssuesPage() {
       setMembers(membersRes.data || []);
     } catch (err) {
       console.error('Failed to fetch issues:', err);
+      toast.error('Failed to load issues list');
     } finally {
       setLoading(false);
     }
@@ -122,13 +53,12 @@ export default function IssuesPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
+  const handleOpenCreate = () => {
+    if (!isPM) {
+      toast.error('Only Project Managers can create issues');
+      return;
     }
+    setCreateOpen(true);
   };
 
   const filtered = useMemo(() => {
@@ -137,15 +67,13 @@ export default function IssuesPage() {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
-        (i) =>
-          i.title?.toLowerCase().includes(q) ||
-          (i.issue_key || i.key)?.toLowerCase().includes(q)
+        (i) => i.title?.toLowerCase().includes(q) || (i.issue_key || i.key)?.toLowerCase().includes(q)
       );
     }
     if (statusFilter) result = result.filter((i) => i.status === statusFilter);
     if (priorityFilter) result = result.filter((i) => i.priority === priorityFilter);
     if (typeFilter) result = result.filter((i) => (i.issue_type || i.type) === typeFilter);
-    if (assigneeFilter) result = result.filter((i) => i.assignee_id === assigneeFilter);
+    if (assigneeFilter) result = result.filter((i) => (i.assignee_id || i.assignee?.id) === Number(assigneeFilter) || (i.assignee_id || i.assignee?.id) === assigneeFilter);
 
     result.sort((a, b) => {
       let aVal, bVal;
@@ -172,298 +100,137 @@ export default function IssuesPage() {
     });
   };
 
-  const getAssigneeName = (issue) => {
-    if (issue.assignee) return issue.assignee.full_name || issue.assignee.username || issue.assignee.name || issue.assignee.email;
-    return 'Unassigned';
-  };
-
-  const getAssigneeAvatar = (issue) => {
-    if (issue.assignee) return (issue.assignee.full_name || issue.assignee.username || issue.assignee.name)?.[0]?.toUpperCase() || '?';
-    return '?';
-  };
-
   return (
-    <Box sx={{ p: 1, maxWidth: '100%', mx: 'auto' }}>
+    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h5" fontWeight={700} color="#1e293b">
-            Issues
-          </Typography>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Issues List
+          </h2>
           {project && (
-            <Typography variant="body2" color="#64748b" mt={0.5}>
-              {project.name} &middot; {issues.length} issue{issues.length !== 1 ? 's' : ''}
-            </Typography>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
+              {project.name} &middot; {issues.length} total issues
+            </div>
           )}
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateOpen(true)}
-          sx={{
-            bgcolor: '#6366f1',
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            px: 3,
-            '&:hover': { bgcolor: '#4f46e5' },
-          }}
-        >
+        </div>
+
+        <Button variant="primary" icon={Plus} onClick={handleOpenCreate} disabled={!isPM}>
           Create Issue
         </Button>
-      </Stack>
+      </div>
 
       {/* Filter Bar */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          mb: 3,
-          border: '1px solid #e2e8f0',
-          borderRadius: 2,
-          bgcolor: '#ffffff',
-        }}
-      >
-        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-          <TextField
-            size="small"
-            placeholder="Search issues..."
+      <div className="card" style={{ padding: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+          <input
+            className="form-input"
+            placeholder="Search issues by key or title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{ minWidth: 220, flex: 1 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
-                </InputAdornment>
-              ),
-            }}
+            style={{ paddingLeft: 36, height: 36 }}
           />
-          <FormControl size="small" sx={{ minWidth: 130 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              {STATUSES.map((s) => (
-                <MenuItem key={s} value={s}>{STATUS_LABELS[s]}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 130 }}>
-            <InputLabel>Priority</InputLabel>
-            <Select
-              value={priorityFilter}
-              label="Priority"
-              onChange={(e) => setPriorityFilter(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              {PRIORITIES.map((p) => (
-                <MenuItem key={p} value={p}>{PRIORITY_LABELS[p]}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Type</InputLabel>
-            <Select
-              value={typeFilter}
-              label="Type"
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              {TYPES.map((t) => (
-                <MenuItem key={t} value={t} sx={{ textTransform: 'capitalize' }}>
-                  {t}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Assignee</InputLabel>
-            <Select
-              value={assigneeFilter}
-              label="Assignee"
-              onChange={(e) => setAssigneeFilter(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              {members.map((m) => {
-                const u = m.user || m;
-                return (
-                  <MenuItem key={u.id || u._id} value={u.id || u._id}>
-                    {u.full_name || u.username || u.name || u.email}
-                  </MenuItem>
-                );
-              })}
-            </Select>
-          </FormControl>
-        </Stack>
-      </Paper>
+        </div>
+
+        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">All Statuses</option>
+          {Object.entries(STATUS_META).map(([k, v]) => (
+            <option key={k} value={k}>{v.label}</option>
+          ))}
+        </select>
+
+        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+          <option value="">All Priorities</option>
+          {Object.entries(PRIORITY_META).map(([k, v]) => (
+            <option key={k} value={k}>{v.label}</option>
+          ))}
+        </select>
+
+        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="">All Types</option>
+          {Object.entries(TYPE_META).map(([k, v]) => (
+            <option key={k} value={k}>{v.label}</option>
+          ))}
+        </select>
+
+        <select className="form-select" style={{ width: 140, height: 36, fontSize: '0.8rem' }} value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
+          <option value="">All Assignees</option>
+          {members.map((m) => {
+            const u = m.user || m;
+            return (
+              <option key={u.id || u._id} value={u.id || u._id}>
+                {u.full_name || u.username || u.name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
 
       {/* Issues Table */}
       {loading ? (
-        <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}>
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={52} sx={{ mx: 2, my: 1, borderRadius: 1 }} />
-          ))}
-        </Paper>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading issues...</div>
       ) : filtered.length === 0 ? (
-        <Paper
-          elevation={0}
-          sx={{
-            border: '1px solid #e2e8f0',
-            borderRadius: 2,
-            bgcolor: '#ffffff',
-            py: 8,
-            textAlign: 'center',
-          }}
-        >
-          <EmptyIcon sx={{ fontSize: 64, color: '#cbd5e1', mb: 2 }} />
-          <Typography variant="h6" color="#64748b" fontWeight={600}>
-            No issues found
-          </Typography>
-          <Typography variant="body2" color="#94a3b8" mt={1}>
-            {issues.length === 0
-              ? 'Create your first issue to get started'
-              : 'Try adjusting your filters'}
-          </Typography>
-          {issues.length === 0 && (
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateOpen(true)}
-              sx={{
-                mt: 3,
-                textTransform: 'none',
-                borderColor: '#6366f1',
-                color: '#6366f1',
-                fontWeight: 600,
-                borderRadius: 2,
-                '&:hover': { borderColor: '#4f46e5', bgcolor: '#eef2ff' },
-              }}
-            >
-              Create Issue
-            </Button>
-          )}
-        </Paper>
+        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+          <Inbox size={48} style={{ color: 'var(--text-light)', marginBottom: 12 }} />
+          <h4 style={{ fontSize: '1rem', fontWeight: 700 }}>No issues found</h4>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Try adjusting your search query or filters.
+          </p>
+        </div>
       ) : (
-        <TableContainer
-          component={Paper}
-          elevation={0}
-          sx={{ border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                <TableCell sx={{ width: 44, py: 1.5 }} />
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5, width: 100 }}>
-                  Key
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5 }}>
-                  Title
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5, width: 120 }}>
-                  Status
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5, width: 110 }}>
-                  Priority
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5, width: 140 }}>
-                  Assignee
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', py: 1.5, width: 120 }}>
-                  <TableSortLabel
-                    active={sortBy === 'created_at'}
-                    direction={sortBy === 'created_at' ? sortDir : 'desc'}
-                    onClick={() => handleSort('created_at')}
-                  >
-                    Created
-                  </TableSortLabel>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-hover)', textAlign: 'left', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '12px 16px', width: 40 }}>Type</th>
+                <th style={{ padding: '12px 16px', width: 100 }}>Key</th>
+                <th style={{ padding: '12px 16px' }}>Title</th>
+                <th style={{ padding: '12px 16px', width: 130 }}>Status</th>
+                <th style={{ padding: '12px 16px', width: 110 }}>Priority</th>
+                <th style={{ padding: '12px 16px', width: 160 }}>Assignee</th>
+                <th style={{ padding: '12px 16px', width: 120 }}>Created</th>
+              </tr>
+            </thead>
+            <tbody>
               {filtered.map((issue) => (
-                <TableRow
+                <tr
                   key={issue.id || issue._id}
-                  hover
                   onClick={() => navigate(`/issue/${issue.id || issue._id}`)}
-                  sx={{
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#f8fafc' },
-                    '&:last-child td': { borderBottom: 0 },
-                  }}
+                  style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
+                  className="card-hover"
                 >
-                  <TableCell sx={{ py: 1.5, textAlign: 'center' }}>
-                    {TYPE_ICONS[issue.issue_type || issue.type] || TYPE_ICONS.task}
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Typography variant="body2" fontWeight={600} color="#64748b" fontSize={13}>
-                      {issue.issue_key || issue.key}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Typography variant="body2" fontWeight={500} color="#1e293b" noWrap sx={{ maxWidth: 400 }}>
-                      {issue.title}
-                    </Typography>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Chip
-                      label={STATUS_LABELS[issue.status] || issue.status}
-                      size="small"
-                      sx={{
-                        bgcolor: `${STATUS_COLORS[issue.status] || '#94a3b8'}18`,
-                        color: STATUS_COLORS[issue.status] || '#94a3b8',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        border: `1px solid ${STATUS_COLORS[issue.status] || '#94a3b8'}40`,
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Chip
-                      label={PRIORITY_LABELS[issue.priority] || issue.priority}
-                      size="small"
-                      sx={{
-                        bgcolor: `${PRIORITY_COLORS[issue.priority] || '#94a3b8'}18`,
-                        color: PRIORITY_COLORS[issue.priority] || '#94a3b8',
-                        fontWeight: 600,
-                        fontSize: 12,
-                        border: `1px solid ${PRIORITY_COLORS[issue.priority] || '#94a3b8'}40`,
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Avatar
-                        sx={{
-                          width: 26,
-                          height: 26,
-                          fontSize: 12,
-                          bgcolor: issue.assignee ? '#6366f1' : '#cbd5e1',
-                        }}
-                      >
-                        {getAssigneeAvatar(issue)}
-                      </Avatar>
-                      <Typography variant="body2" color="#475569" fontSize={13} noWrap>
-                        {getAssigneeName(issue)}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5 }}>
-                    <Typography variant="body2" color="#64748b" fontSize={13}>
-                      {formatDate(issue.created_at)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
+                  <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    <TypeIcon type={issue.issue_type || issue.type} size={16} />
+                  </td>
+                  <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--primary)' }}>
+                    {issue.issue_key || issue.key}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{issue.title}</td>
+                  <td style={{ padding: '12px 16px' }}><StatusBadge status={issue.status} /></td>
+                  <td style={{ padding: '12px 16px' }}><PriorityBadge priority={issue.priority} /></td>
+                  <td style={{ padding: '12px 16px' }}>
+                    {issue.assignee ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Avatar name={issue.assignee.full_name || issue.assignee.username || issue.assignee.name} size={24} />
+                        <span style={{ fontSize: '0.825rem', fontWeight: 500 }}>
+                          {issue.assignee.full_name || issue.assignee.username || issue.assignee.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-light)', fontSize: '0.825rem' }}>Unassigned</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '0.825rem' }}>
+                    {formatDate(issue.created_at)}
+                  </td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {/* Create Issue Dialog */}
       <CreateIssueDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -473,6 +240,6 @@ export default function IssuesPage() {
           fetchData();
         }}
       />
-    </Box>
+    </div>
   );
 }

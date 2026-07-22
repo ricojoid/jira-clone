@@ -1,55 +1,44 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
-  Box,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Avatar,
-  IconButton,
-  Divider,
-  Select,
-  MenuItem,
-  FormControl,
-  Tooltip,
-} from '@mui/material';
-import {
-  Dashboard as DashboardIcon,
-  ViewKanban as BoardIcon,
-  ListAlt as BacklogIcon,
-  Speed as SprintIcon,
-  BugReport as IssuesIcon,
-  Settings as SettingsIcon,
-  ChevronLeft as CollapseIcon,
-  ChevronRight as ExpandIcon,
-} from '@mui/icons-material';
+  LayoutDashboard,
+  Kanban,
+  ListTodo,
+  Zap,
+  CheckSquare,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  User as UserIcon,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { projectApi } from '../../api';
+import Avatar from '../ui/Avatar';
 import toast from 'react-hot-toast';
-
-const SIDEBAR_WIDTH = 260;
-const SIDEBAR_COLLAPSED_WIDTH = 72;
-
-const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { label: 'Board', icon: <BoardIcon />, path: '/board' },
-  { label: 'Backlog', icon: <BacklogIcon />, path: '/backlog' },
-  { label: 'Sprints', icon: <SprintIcon />, path: '/sprints' },
-  { label: 'Issues', icon: <IssuesIcon />, path: '/issues' },
-  { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-];
 
 export default function Sidebar({ collapsed, onToggleCollapse }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams();
-  const { user } = useAuth();
+  const { user, isPM, isSuperAdmin } = useAuth();
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
+
+  const baseNavItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Board', icon: Kanban, path: '/board' },
+    { label: 'Backlog', icon: ListTodo, path: '/backlog' },
+    { label: 'Sprints', icon: Zap, path: '/sprints' },
+    { label: 'Issues', icon: CheckSquare, path: '/issues' },
+    { label: 'Settings', icon: Settings, path: '/settings' },
+  ];
+
+  const navItems = isSuperAdmin
+    ? [...baseNavItems, { label: 'User Admin', icon: Users, path: '/admin/users' }]
+    : baseNavItems;
 
   useEffect(() => {
     if (projectId) {
@@ -74,281 +63,195 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
   }, [projectId, selectedProject]);
 
   const isActive = (path) => location.pathname.startsWith(path);
-
-  const width = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+  const width = collapsed ? 72 : 260;
 
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
+    <aside
+      style={{
         width,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width,
-          boxSizing: 'border-box',
-          backgroundColor: '#ffffff',
-          borderRight: 'none',
-          boxShadow: '1px 0 6px rgba(0, 0, 0, 0.04)',
-          transition: 'width 0.2s ease-in-out',
-          overflowX: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-        },
+        minWidth: width,
+        height: '100vh',
+        backgroundColor: 'var(--bg-surface)',
+        borderRight: '1px solid var(--border-color)',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'width 0.2s ease',
+        zIndex: 100,
+        position: 'sticky',
+        top: 0,
       }}
     >
-      {/* Logo / Title */}
-      <Box
-        sx={{
+      {/* Brand Header */}
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
-          px: collapsed ? 1 : 2.5,
-          py: 2.5,
-          minHeight: 64,
+          padding: '16px 20px',
+          height: 64,
+          borderBottom: '1px solid var(--border-light)',
         }}
       >
-        {!collapsed && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography
-                sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}
-              >
-                PJ
-              </Typography>
-            </Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: '#1e293b',
-                fontSize: '1.15rem',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              ProJira
-            </Typography>
-          </Box>
-        )}
-
-        {collapsed && (
-          <Box
-            sx={{
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
               width: 36,
               height: 36,
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 900,
+              fontSize: 16,
+              boxShadow: '0 4px 10px rgba(220, 38, 38, 0.3)',
             }}
           >
-            <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
-              PJ
-            </Typography>
-          </Box>
-        )}
+            JC
+          </div>
+          {!collapsed && (
+            <div>
+              <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
+                Jira Clone
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 800 }}>
+                Enterprise Red
+              </div>
+            </div>
+          )}
+        </div>
 
         {!collapsed && (
-          <IconButton
-            size="small"
+          <button
+            className="btn btn-ghost btn-sm"
             onClick={onToggleCollapse}
-            sx={{ color: '#64748b' }}
+            style={{ padding: 4 }}
           >
-            <CollapseIcon fontSize="small" />
-          </IconButton>
+            <ChevronLeft size={18} />
+          </button>
         )}
-      </Box>
+      </div>
 
       {/* Project Selector */}
       {!collapsed && (
-        <Box sx={{ px: 2, mb: 1 }}>
-          <FormControl fullWidth size="small">
-            <Select
-              value={selectedProject}
-              onChange={(e) => {
-                const projId = e.target.value;
-                setSelectedProject(projId);
-                const currentView = navItems.find((item) => location.pathname.startsWith(item.path));
-                if (currentView && ['/board', '/backlog', '/sprints', '/issues'].includes(currentView.path)) {
-                  navigate(`${currentView.path}/${projId}`);
-                }
-              }}
-              displayEmpty
-              sx={{
-                fontSize: '0.85rem',
-                borderRadius: '8px',
-                backgroundColor: '#f8fafc',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#e2e8f0',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#c7d2fe',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#6366f1',
-                },
-              }}
-            >
-              {projects.length === 0 && (
-                <MenuItem value="" disabled>
-                  No projects
-                </MenuItem>
-              )}
-              {projects.map((project) => (
-                <MenuItem
-                  key={project._id || project.id}
-                  value={project._id || project.id}
-                >
-                  {project.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <div style={{ padding: '16px 16px 8px 16px' }}>
+          <label className="form-label" style={{ marginBottom: 6, display: 'block', fontSize: '0.75rem' }}>
+            ACTIVE PROJECT
+          </label>
+          <select
+            className="form-select"
+            value={selectedProject}
+            onChange={(e) => {
+              const projId = e.target.value;
+              setSelectedProject(projId);
+              const currentView = navItems.find((item) => location.pathname.startsWith(item.path));
+              if (currentView && ['/board', '/backlog', '/sprints', '/issues'].includes(currentView.path)) {
+                navigate(`${currentView.path}/${projId}`);
+              }
+            }}
+            style={{ fontWeight: 700, fontSize: '0.85rem' }}
+          >
+            {projects.length === 0 && <option value="">No projects</option>}
+            {projects.map((p) => (
+              <option key={p._id || p.id} value={p._id || p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
-      <Divider sx={{ borderColor: '#f1f5f9', mx: 2, my: 1 }} />
-
-      {/* Navigation */}
-      <List sx={{ flex: 1, px: 1.5, py: 1 }}>
+      {/* Nav List */}
+      <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
         {navItems.map((item) => {
           const active = isActive(item.path);
-          const button = (
-            <ListItemButton
+          const Icon = item.icon;
+
+          return (
+            <button
               key={item.label}
               onClick={() => {
                 if (['/board', '/backlog', '/sprints', '/issues'].includes(item.path)) {
                   if (selectedProject) {
                     navigate(`${item.path}/${selectedProject}`);
                   } else {
-                    toast.error('Please select or create a project first');
+                    toast.error('Please select a project first');
                   }
                 } else {
                   navigate(item.path);
                 }
               }}
-              sx={{
-                borderRadius: '8px',
-                mb: 0.5,
-                px: collapsed ? 1.5 : 2,
-                py: 1,
+              className="btn btn-ghost"
+              style={{
+                width: '100%',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                backgroundColor: active ? '#eef2ff' : 'transparent',
-                color: active ? '#6366f1' : '#1e293b',
-                '&:hover': {
-                  backgroundColor: active ? '#eef2ff' : '#f8fafc',
-                },
-                '& .MuiListItemIcon-root': {
-                  color: active ? '#6366f1' : '#64748b',
-                  minWidth: collapsed ? 0 : 40,
-                },
+                padding: '10px 12px',
+                marginBottom: 4,
+                backgroundColor: active ? 'var(--primary-light)' : 'transparent',
+                color: active ? 'var(--primary)' : 'var(--text-body)',
+                fontWeight: active ? 800 : 600,
+                border: active ? '1px solid var(--primary-border)' : '1px solid transparent',
               }}
+              title={collapsed ? item.label : undefined}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              {!collapsed && (
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: active ? 600 : 500,
-                  }}
-                />
-              )}
-            </ListItemButton>
-          );
-
-          return collapsed ? (
-            <Tooltip key={item.label} title={item.label} placement="right">
-              {button}
-            </Tooltip>
-          ) : (
-            button
+              <Icon size={18} style={{ color: active ? 'var(--primary)' : 'var(--text-muted)' }} />
+              {!collapsed && <span>{item.label}</span>}
+            </button>
           );
         })}
-      </List>
+      </nav>
 
-      {/* Collapse toggle when collapsed */}
+      {/* Expand Button if collapsed */}
       {collapsed && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-          <IconButton
-            size="small"
-            onClick={onToggleCollapse}
-            sx={{ color: '#64748b' }}
-          >
-            <ExpandIcon fontSize="small" />
-          </IconButton>
-        </Box>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12 }}>
+          <button className="btn btn-ghost btn-sm" onClick={onToggleCollapse}>
+            <ChevronRight size={18} />
+          </button>
+        </div>
       )}
 
-      <Divider sx={{ borderColor: '#f1f5f9', mx: 2 }} />
-
-      {/* User Info */}
-      <Box
-        sx={{
+      {/* User Footer */}
+      <div
+        style={{
+          padding: '16px',
+          borderTop: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
-          gap: collapsed ? 0 : 1.5,
+          gap: 12,
           justifyContent: collapsed ? 'center' : 'flex-start',
-          px: collapsed ? 1 : 2.5,
-          py: 2,
         }}
       >
-        <Avatar
-          sx={{
-            width: 34,
-            height: 34,
-            bgcolor: '#6366f1',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-          }}
-          src={user?.avatar}
-        >
-          {user?.full_name || user?.username || user?.name
-            ? (user.full_name || user.username || user.name)
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-            : 'U'}
-        </Avatar>
+        <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar} size={36} />
         {!collapsed && (
-          <Box sx={{ overflow: 'hidden' }}>
-            <Typography
-              sx={{
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <div
+              style={{
+                fontWeight: 800,
                 fontSize: '0.85rem',
-                fontWeight: 600,
-                color: '#1e293b',
+                color: 'var(--text-main)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
             >
               {user?.full_name || user?.username || user?.name || 'User'}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '0.75rem',
-                color: '#64748b',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {user?.email || ''}
-            </Typography>
-          </Box>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+              {isSuperAdmin ? (
+                <Shield size={12} color="#dc2626" />
+              ) : isPM ? (
+                <Shield size={12} color="#ea580c" />
+              ) : (
+                <UserIcon size={12} color="var(--text-muted)" />
+              )}
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                {isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager' : 'Member'}
+              </span>
+            </div>
+          </div>
         )}
-      </Box>
-    </Drawer>
+      </div>
+    </aside>
   );
 }

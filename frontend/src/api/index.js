@@ -91,4 +91,14 @@ export const userApi = {
   list: () => api.get('/users'),
 };
 
+// --- Super Admin ---
+export const adminApi = {
+  listUsers: () => api.get('/admin/users'),
+  createUser: (data) => api.post('/admin/users', data),
+  updateRole: (userId, role) => api.put(`/admin/users/${userId}/role`, { role }),
+  resetPassword: (userId, new_password) => api.put(`/admin/users/${userId}/reset-password`, { new_password }),
+  updateStatus: (userId, is_active) => api.put(`/admin/users/${userId}/status`, { is_active }),
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+};
+
 export default api;

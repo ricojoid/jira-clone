@@ -36,7 +36,7 @@ class Issue(Base):
     # Foreign keys
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     sprint_id = Column(Integer, ForeignKey("sprints.id"), nullable=True)
     parent_id = Column(Integer, ForeignKey("issues.id"), nullable=True)
 
@@ -62,7 +62,17 @@ class Issue(Base):
         "Comment", back_populates="issue", cascade="all, delete-orphan"
     )
     labels = relationship("Label", secondary=issue_labels, back_populates="issues")
-    children = relationship("Issue", backref="parent", remote_side=[id], foreign_keys=[parent_id])
+    parent = relationship(
+        "Issue",
+        remote_side=[id],
+        foreign_keys=[parent_id],
+        back_populates="children",
+    )
+    children = relationship(
+        "Issue",
+        foreign_keys=[parent_id],
+        back_populates="parent",
+    )
 
 
 class Label(Base):

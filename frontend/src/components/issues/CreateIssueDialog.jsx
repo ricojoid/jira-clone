@@ -1,57 +1,10 @@
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Button,
-  Stack,
-  Chip,
-  Autocomplete,
-  Avatar,
-  Box,
-  Typography,
-  IconButton,
-} from '@mui/material';
-import {
-  Close as CloseIcon,
-  BugReport as BugIcon,
-  TaskAlt as TaskIcon,
-  AutoStories as StoryIcon,
-  Bolt as EpicIcon,
-  AccountTree as SubtaskIcon,
-} from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { issueApi, userApi, sprintApi } from '../../api';
-
-const TYPE_OPTIONS = [
-  { value: 'task', label: 'Task', icon: <TaskIcon sx={{ color: '#3b82f6', fontSize: 18 }} /> },
-  { value: 'bug', label: 'Bug', icon: <BugIcon sx={{ color: '#ef4444', fontSize: 18 }} /> },
-  { value: 'story', label: 'Story', icon: <StoryIcon sx={{ color: '#22c55e', fontSize: 18 }} /> },
-  { value: 'epic', label: 'Epic', icon: <EpicIcon sx={{ color: '#a855f7', fontSize: 18 }} /> },
-  { value: 'subtask', label: 'Subtask', icon: <SubtaskIcon sx={{ color: '#64748b', fontSize: 18 }} /> },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: 'highest', label: 'Highest', color: '#ef4444' },
-  { value: 'high', label: 'High', color: '#f97316' },
-  { value: 'medium', label: 'Medium', color: '#f59e0b' },
-  { value: 'low', label: 'Low', color: '#3b82f6' },
-  { value: 'lowest', label: 'Lowest', color: '#22c55e' },
-];
-
-const fieldSx = {
-  '& .MuiOutlinedInput-root': {
-    '& fieldset': { borderColor: '#e2e8f0' },
-    '&:hover fieldset': { borderColor: '#cbd5e1' },
-    '&.Mui-focused fieldset': { borderColor: '#6366f1' },
-  },
-};
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Avatar from '../ui/Avatar';
+import { TYPE_META, PRIORITY_META, TypeIcon } from '../ui/Badge';
 
 const initialForm = {
   title: '',
@@ -69,6 +22,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [labels, setLabels] = useState([]);
+  const [tagInput, setTagInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -100,11 +54,27 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
   useEffect(() => {
     if (!open) {
       setForm(parentId ? { ...initialForm, type: 'subtask' } : initialForm);
+      setTagInput('');
     }
   }, [open, parentId]);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const handleAddTag = (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+      e.preventDefault();
+      const val = tagInput.trim().replace(/^,|,$/g, '');
+      if (val && !form.labels.includes(val)) {
+        setForm((prev) => ({ ...prev, labels: [...prev.labels, val] }));
+      }
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    setForm((prev) => ({ ...prev, labels: prev.labels.filter((t) => t !== tag) }));
   };
 
   const resolveLabels = async (labelNames) => {
@@ -139,13 +109,13 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         description: form.description.trim(),
         issue_type: form.type,
         priority: form.priority,
-        project_id: projectId,
+        project_id: Number(projectId),
       };
 
-      if (form.assignee_id) payload.assignee_id = form.assignee_id;
-      if (form.sprint_id) payload.sprint_id = form.sprint_id;
+      if (form.assignee_id) payload.assignee_id = Number(form.assignee_id);
+      if (form.sprint_id) payload.sprint_id = Number(form.sprint_id);
       if (form.story_points !== '') payload.story_points = Number(form.story_points);
-      if (parentId) payload.parent_id = parentId;
+      if (parentId) payload.parent_id = Number(parentId);
       if (form.labels.length > 0) {
         payload.label_ids = await resolveLabels(form.labels);
       }
@@ -161,225 +131,139 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
     }
   };
 
+  const footer = (
+    <>
+      <Button variant="secondary" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button variant="primary" onClick={handleSubmit} disabled={submitting || !form.title.trim()}>
+        {submitting ? 'Creating...' : 'Create Issue'}
+      </Button>
+    </>
+  );
+
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          bgcolor: '#ffffff',
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pb: 1,
-        }}
-      >
-        <Typography variant="h6" fontWeight={700} color="#1e293b">
-          Create Issue
-        </Typography>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon sx={{ color: '#94a3b8' }} />
-        </IconButton>
-      </DialogTitle>
+    <Modal open={open} onClose={onClose} title="Create Issue" footer={footer} maxWidth="600px">
+      <div className="form-group">
+        <label className="form-label">Issue Title *</label>
+        <input
+          className="form-input"
+          type="text"
+          placeholder="e.g. Implement user authentication flow"
+          value={form.title}
+          onChange={handleChange('title')}
+          autoFocus
+        />
+      </div>
 
-      <DialogContent sx={{ pt: 2 }}>
-        <Stack spacing={2.5} mt={1}>
-          {/* Title */}
-          <TextField
-            label="Title"
-            value={form.title}
-            onChange={handleChange('title')}
-            fullWidth
-            required
-            placeholder="Enter issue title"
-            autoFocus
-            sx={fieldSx}
-          />
+      <div className="form-group">
+        <label className="form-label">Description</label>
+        <textarea
+          className="form-textarea"
+          rows={4}
+          placeholder="Add details, steps to reproduce, or acceptance criteria..."
+          value={form.description}
+          onChange={handleChange('description')}
+        />
+      </div>
 
-          {/* Description */}
-          <TextField
-            label="Description"
-            value={form.description}
-            onChange={handleChange('description')}
-            fullWidth
-            multiline
-            minRows={3}
-            maxRows={8}
-            placeholder="Describe the issue..."
-            sx={fieldSx}
-          />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-group">
+          <label className="form-label">Issue Type</label>
+          <select className="form-select" value={form.type} onChange={handleChange('type')}>
+            {Object.entries(TYPE_META).map(([key, meta]) => (
+              <option key={key} value={key}>
+                {meta.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* Type and Priority row */}
-          <Stack direction="row" spacing={2}>
-            <FormControl fullWidth sx={fieldSx}>
-              <InputLabel>Type</InputLabel>
-              <Select
-                value={form.type}
-                label="Type"
-                onChange={handleChange('type')}
-              >
-                {TYPE_OPTIONS.map((t) => (
-                  <MenuItem key={t.value} value={t.value}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      {t.icon}
-                      <span>{t.label}</span>
-                    </Stack>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        <div className="form-group">
+          <label className="form-label">Priority</label>
+          <select className="form-select" value={form.priority} onChange={handleChange('priority')}>
+            {Object.entries(PRIORITY_META).map(([key, meta]) => (
+              <option key={key} value={key}>
+                {meta.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-            <FormControl fullWidth sx={fieldSx}>
-              <InputLabel>Priority</InputLabel>
-              <Select
-                value={form.priority}
-                label="Priority"
-                onChange={handleChange('priority')}
-              >
-                {PRIORITY_OPTIONS.map((p) => (
-                  <MenuItem key={p.value} value={p.value}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Box
-                        sx={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: '50%',
-                          bgcolor: p.color,
-                        }}
-                      />
-                      <span>{p.label}</span>
-                    </Stack>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Stack>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-group">
+          <label className="form-label">Assignee</label>
+          <select className="form-select" value={form.assignee_id} onChange={handleChange('assignee_id')}>
+            <option value="">Unassigned</option>
+            {users.map((u) => (
+              <option key={u.id || u._id} value={u.id || u._id}>
+                {u.full_name || u.username || u.name || u.email}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* Assignee */}
-          <FormControl fullWidth sx={fieldSx}>
-            <InputLabel>Assignee</InputLabel>
-            <Select
-              value={form.assignee_id}
-              label="Assignee"
-              onChange={handleChange('assignee_id')}
-              displayEmpty
-            >
-              <MenuItem value="">
-                <Typography color="#94a3b8">Unassigned</Typography>
-              </MenuItem>
-              {users.map((u) => (
-                <MenuItem key={u.id || u._id} value={u.id || u._id}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Avatar sx={{ width: 22, height: 22, fontSize: 10, bgcolor: '#6366f1' }}>
-                      {(u.full_name || u.username || u.name)?.[0]?.toUpperCase() || '?'}
-                    </Avatar>
-                    <span>{u.full_name || u.username || u.name || u.email}</span>
-                  </Stack>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+        <div className="form-group">
+          <label className="form-label">Sprint</label>
+          <select className="form-select" value={form.sprint_id} onChange={handleChange('sprint_id')}>
+            <option value="">No Sprint (Backlog)</option>
+            {sprints.map((s) => (
+              <option key={s.id || s._id} value={s.id || s._id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-          {/* Sprint */}
-          <FormControl fullWidth sx={fieldSx}>
-            <InputLabel>Sprint</InputLabel>
-            <Select
-              value={form.sprint_id}
-              label="Sprint"
-              onChange={handleChange('sprint_id')}
-              displayEmpty
-            >
-              <MenuItem value="">
-                <Typography color="#94a3b8">No Sprint (Backlog)</Typography>
-              </MenuItem>
-              {sprints.map((s) => (
-                <MenuItem key={s.id || s._id} value={s.id || s._id}>
-                  {s.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Story Points */}
-          <TextField
-            label="Story Points"
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-group">
+          <label className="form-label">Story Points</label>
+          <input
+            className="form-input"
             type="number"
+            min={0}
+            max={100}
+            placeholder="e.g. 3"
             value={form.story_points}
             onChange={handleChange('story_points')}
-            fullWidth
-            placeholder="0"
-            inputProps={{ min: 0, max: 100 }}
-            sx={fieldSx}
           />
+        </div>
 
-          {/* Labels */}
-          <Autocomplete
-            multiple
-            freeSolo
-            options={labels.map((l) => l.name || l)}
-            value={form.labels}
-            onChange={(_, newVal) => setForm((prev) => ({ ...prev, labels: newVal }))}
-            renderTags={(value, getTagProps) =>
-              value.map((label, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={label}
-                  label={label}
-                  size="small"
-                  sx={{
-                    bgcolor: '#eef2ff',
-                    color: '#6366f1',
-                    fontWeight: 500,
-                    fontSize: 12,
-                    border: '1px solid #c7d2fe',
-                  }}
-                />
-              ))
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Labels"
-                placeholder="Add labels"
-                sx={fieldSx}
-              />
-            )}
+        <div className="form-group">
+          <label className="form-label">Labels (press Enter or comma)</label>
+          <input
+            className="form-input"
+            type="text"
+            placeholder="Add label..."
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleAddTag}
           />
-        </Stack>
-      </DialogContent>
+        </div>
+      </div>
 
-      <DialogActions sx={{ px: 3, pb: 2.5, pt: 1 }}>
-        <Button
-          onClick={onClose}
-          sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={submitting || !form.title.trim()}
-          sx={{
-            textTransform: 'none',
-            bgcolor: '#6366f1',
-            fontWeight: 600,
-            px: 4,
-            borderRadius: 2,
-            '&:hover': { bgcolor: '#4f46e5' },
-            '&.Mui-disabled': { bgcolor: '#c7d2fe' },
-          }}
-        >
-          {submitting ? 'Creating...' : 'Create Issue'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      {form.labels.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: -8 }}>
+          {form.labels.map((t) => (
+            <span
+              key={t}
+              className="badge"
+              style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', border: '1px solid var(--primary-border)', paddingRight: 6 }}
+            >
+              {t}
+              <button
+                type="button"
+                onClick={() => handleRemoveTag(t)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontWeight: 700, marginLeft: 4 }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </Modal>
   );
 }

@@ -1,22 +1,12 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import { Visibility, VisibilityOff, Email, Lock } from "@mui/icons-material";
-import toast from "react-hot-toast";
-import { useAuth } from "../context/AuthContext";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
 
-const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+export default function LoginPage() {
+  const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -29,167 +19,163 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.email.trim() || !formData.password.trim()) {
-      toast.error("Please fill in all fields");
+    if (!formData.identifier.trim() || !formData.password.trim()) {
+      toast.error('Silakan isi username/email dan kata sandi');
       return;
     }
 
     setLoading(true);
     try {
-      await login(formData.email, formData.password);
-      toast.success("Signed in successfully!");
-      navigate("/dashboard");
+      await login(formData.identifier.trim(), formData.password);
+      toast.success('Berhasil masuk!');
+      navigate('/dashboard');
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "Login failed. Please try again.");
+      toast.error(
+        err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Login gagal. Silakan periksa kembali.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-        px: 2,
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+        padding: 16,
       }}
     >
-      <Card
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 440,
-          borderRadius: 3,
-          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)",
+      <div
+        className="card"
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          padding: 36,
+          boxShadow: 'var(--shadow-xl)',
+          borderRadius: 'var(--radius-lg)',
         }}
       >
-        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 800,
-                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                mb: 1,
-              }}
-            >
-              ProJira
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Sign in to your account
-            </Typography>
-          </Box>
-
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              fullWidth
-              name="email"
-              label="Email Address"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              sx={{ mb: 2.5 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <TextField
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              sx={{ mb: 3.5 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      edge="end"
-                      size="small"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <VisibilityOff sx={{ fontSize: 20 }} />
-                      ) : (
-                        <Visibility sx={{ fontSize: 20 }} />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{
-                py: 1.4,
-                bgcolor: "#6366f1",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                textTransform: "none",
-                borderRadius: 2,
-                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.35)",
-                "&:hover": {
-                  bgcolor: "#4f46e5",
-                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.45)",
-                },
-                "&.Mui-disabled": {
-                  bgcolor: "#a5b4fc",
-                  color: "#fff",
-                },
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={22} sx={{ color: "#fff" }} />
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </Box>
-
-          <Typography
-            variant="body2"
-            sx={{ textAlign: "center", mt: 3, color: "#64748b" }}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: 22,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+              boxShadow: '0 8px 18px rgba(99, 102, 241, 0.35)',
+            }}
           >
-            Don&apos;t have an account?{" "}
-            <Link
-              to="/register"
-              style={{
-                color: "#6366f1",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Sign Up
-            </Link>
-          </Typography>
-        </CardContent>
-      </Card>
-    </Box>
-  );
-};
+            JC
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Welcome to Jira Clone
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Sign in with your Username or Email
+          </p>
+        </div>
 
-export default LoginPage;
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div className="form-group">
+            <label className="form-label">Username / Email</label>
+            <div style={{ position: 'relative' }}>
+              <User
+                size={18}
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-light)',
+                }}
+              />
+              <input
+                className="form-input"
+                type="text"
+                name="identifier"
+                placeholder="Enter your username or email"
+                value={formData.identifier}
+                onChange={handleChange}
+                style={{ paddingLeft: 40 }}
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock
+                size={18}
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'var(--text-light)',
+                }}
+              />
+              <input
+                className="form-input"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                style={{ paddingLeft: 40, paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-light)',
+                  padding: 0,
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            disabled={loading}
+            style={{ width: '100%', marginTop: 8 }}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Don't have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 700 }}>
+            Register Now
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

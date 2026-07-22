@@ -1,34 +1,18 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-  Person,
-  BadgeOutlined,
-} from "@mui/icons-material";
-import toast from "react-hot-toast";
-import { useAuth } from "../context/AuthContext";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
 
-const RegisterPage = () => {
+export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    fullName: "",
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    fullName: '',
+    username: '',
+    email: '',
+    role: 'pm',
+    password: '',
+    confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -48,37 +32,37 @@ const RegisterPage = () => {
       !formData.password.trim() ||
       !formData.confirmPassword.trim()
     ) {
-      toast.error("Please fill in all fields");
+      toast.error('Silakan isi semua bidang');
       return false;
     }
 
     if (formData.fullName.trim().length < 2) {
-      toast.error("Full name must be at least 2 characters");
+      toast.error('Nama lengkap minimal 2 karakter');
       return false;
     }
 
     if (formData.username.trim().length < 3) {
-      toast.error("Username must be at least 3 characters");
+      toast.error('Username minimal 3 karakter');
       return false;
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(formData.username.trim())) {
-      toast.error("Username can only contain letters, numbers, and underscores");
+      toast.error('Username hanya boleh berupa huruf, angka, dan garis bawah');
       return false;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      toast.error("Please enter a valid email address");
+      toast.error('Masukkan alamat email yang valid');
       return false;
     }
 
     if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error('Kata sandi minimal 6 karakter');
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error('Konfirmasi kata sandi tidak cocok');
       return false;
     }
 
@@ -96,13 +80,14 @@ const RegisterPage = () => {
         full_name: formData.fullName.trim(),
         username: formData.username.trim(),
         email: formData.email.trim(),
+        role: formData.role,
         password: formData.password,
       });
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
+      toast.success('Akun berhasil dibuat!');
+      navigate('/dashboard');
     } catch (err) {
       toast.error(
-        err?.response?.data?.message || err?.message || "Registration failed. Please try again."
+        err?.response?.data?.message || err?.message || 'Pendaftaran gagal. Silakan coba lagi.'
       );
     } finally {
       setLoading(false);
@@ -110,218 +95,165 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-        px: 2,
-        py: 4,
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+        padding: '24px 16px',
       }}
     >
-      <Card
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 440,
-          borderRadius: 3,
-          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)",
+      <div
+        className="card"
+        style={{
+          width: '100%',
+          maxWidth: 460,
+          padding: 36,
+          boxShadow: 'var(--shadow-xl)',
+          borderRadius: 'var(--radius-lg)',
         }}
       >
-        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-          <Box sx={{ textAlign: "center", mb: 4 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 800,
-                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                mb: 1,
-              }}
-            >
-              ProJira
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b" }}>
-              Create your account
-            </Typography>
-          </Box>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: 22,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+              boxShadow: '0 8px 18px rgba(99, 102, 241, 0.35)',
+            }}
+          >
+            JC
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
+            Create an Account
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            Join Jira Clone to manage your agile workspace
+          </p>
+        </div>
 
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              fullWidth
-              name="fullName"
-              label="Full Name"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="John Doe"
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Person sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
+            <div style={{ position: 'relative' }}>
+              <User size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+              <input
+                className="form-input"
+                type="text"
+                name="fullName"
+                placeholder="John Doe"
+                value={formData.fullName}
+                onChange={handleChange}
+                style={{ paddingLeft: 40 }}
+                autoFocus
+              />
+            </div>
+          </div>
 
-            <TextField
-              fullWidth
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input
+              className="form-input"
+              type="text"
               name="username"
-              label="Username"
+              placeholder="johndoe"
               value={formData.username}
               onChange={handleChange}
-              placeholder="johndoe"
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BadgeOutlined sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
             />
+          </div>
 
-            <TextField
-              fullWidth
-              name="email"
-              label="Email Address"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+              <input
+                className="form-input"
+                type="email"
+                name="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                style={{ paddingLeft: 40 }}
+              />
+            </div>
+          </div>
 
-            <TextField
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="At least 6 characters"
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      edge="end"
-                      size="small"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <VisibilityOff sx={{ fontSize: 20 }} />
-                      ) : (
-                        <Visibility sx={{ fontSize: 20 }} />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          <div className="form-group">
+            <label className="form-label">Initial Role</label>
+            <select className="form-select" name="role" value={formData.role} onChange={handleChange}>
+              <option value="pm">Project Manager (PM) - Full Access</option>
+              <option value="member">Team Member</option>
+            </select>
+          </div>
 
-            <TextField
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type={showConfirmPassword ? "text" : "password"}
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Re-enter your password"
-              sx={{ mb: 3 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock sx={{ color: "#94a3b8", fontSize: 20 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      edge="end"
-                      size="small"
-                      tabIndex={-1}
-                    >
-                      {showConfirmPassword ? (
-                        <VisibilityOff sx={{ fontSize: 20 }} />
-                      ) : (
-                        <Visibility sx={{ fontSize: 20 }} />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+              <input
+                className="form-input"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="At least 6 characters"
+                value={formData.password}
+                onChange={handleChange}
+                style={{ paddingLeft: 40, paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0 }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={loading}
-              sx={{
-                py: 1.4,
-                bgcolor: "#6366f1",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                textTransform: "none",
-                borderRadius: 2,
-                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.35)",
-                "&:hover": {
-                  bgcolor: "#4f46e5",
-                  boxShadow: "0 4px 12px rgba(99, 102, 241, 0.45)",
-                },
-                "&.Mui-disabled": {
-                  bgcolor: "#a5b4fc",
-                  color: "#fff",
-                },
-              }}
-            >
-              {loading ? (
-                <CircularProgress size={22} sx={{ color: "#fff" }} />
-              ) : (
-                "Create Account"
-              )}
-            </Button>
-          </Box>
+          <div className="form-group">
+            <label className="form-label">Confirm Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
+              <input
+                className="form-input"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                placeholder="Repeat password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                style={{ paddingLeft: 40, paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0 }}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-          <Typography
-            variant="body2"
-            sx={{ textAlign: "center", mt: 3, color: "#64748b" }}
-          >
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              style={{
-                color: "#6366f1",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Sign In
-            </Link>
-          </Typography>
-        </CardContent>
-      </Card>
-    </Box>
+          <Button type="submit" variant="primary" size="lg" disabled={loading} style={{ width: '100%', marginTop: 8 }}>
+            {loading ? 'Creating Account...' : 'Register'}
+          </Button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginTop: 24, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 700 }}>
+            Sign In
+          </Link>
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default RegisterPage;
+}

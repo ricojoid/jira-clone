@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_SERVER: str = "localhost"
+    DATABASE_SERVER: str = r"G07IDXNFID02063\SQLEXPRESS"
     DATABASE_NAME: str = "jira_clone"
     DATABASE_DRIVER: str = "ODBC Driver 17 for SQL Server"
 

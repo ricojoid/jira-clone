@@ -12,6 +12,7 @@ import IssueDetailPage from './pages/IssueDetailPage';
 import BacklogPage from './pages/BacklogPage';
 import SprintsPage from './pages/SprintsPage';
 import SettingsPage from './pages/SettingsPage';
+import AdminUserManagementPage from './pages/AdminUserManagementPage';
 
 function App() {
   return (
@@ -22,8 +23,8 @@ function App() {
           duration: 3000,
           style: {
             borderRadius: '10px',
-            background: '#1e293b',
-            color: '#f8fafc',
+            background: '#18181b',
+            color: '#ffffff',
             fontSize: '0.875rem',
           },
         }}
@@ -44,6 +45,7 @@ function App() {
               <Route path="/backlog/:projectId" element={<BacklogPage />} />
               <Route path="/sprints/:projectId" element={<SprintsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/admin/users" element={<AdminUserManagementPage />} />
             </Route>
 
             {/* Default redirect */}

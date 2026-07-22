@@ -9,7 +9,6 @@ import {
   useSensors,
   MeasuringStrategy,
 } from '@dnd-kit/core';
-import { Box } from '@mui/material';
 import KanbanColumn from './KanbanColumn';
 import { IssueCardContent } from './IssueCard';
 
@@ -19,14 +18,27 @@ const measuringConfig = {
   },
 };
 
+function getColKey(col) {
+  if (!col) return 'todo';
+  let s = col.status;
+  if (!s && col.name) {
+    s = col.name.toLowerCase().replace(/\s+/g, '_');
+    if (s === 'to_do') s = 'todo';
+  }
+  return s || col.id || col._id || 'todo';
+}
+
 export default function KanbanBoard({
-  columns,
-  issuesByColumn,
+  columns = [],
+  issues = [],
+  issuesByColumn: propsIssuesByColumn,
   onMoveIssue,
+  onIssueMove,
   onIssueClick,
   onAddIssue,
 }) {
   const [activeIssue, setActiveIssue] = useState(null);
+  const handleMove = onMoveIssue || onIssueMove;
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -39,15 +51,59 @@ export default function KanbanBoard({
         delay: 200,
         tolerance: 5,
       },
-    }),
+    })
   );
 
-  // Build a flat lookup of issue id -> column id
+  const issuesByColumn = useMemo(() => {
+    if (propsIssuesByColumn) return propsIssuesByColumn;
+    const map = {};
+
+    (columns || []).forEach((col) => {
+      const colKey = getColKey(col);
+      if (colKey) map[colKey] = [];
+    });
+
+    (issues || []).forEach((issue) => {
+      const rawStatus = (issue.status || 'todo').toLowerCase();
+
+      let targetKey = Object.keys(map).find((key) => {
+        const strKey = String(key).toLowerCase();
+        return (
+          strKey === rawStatus ||
+          strKey === (issue.status || '').toLowerCase()
+        );
+      });
+
+      if (!targetKey && (columns || []).length > 0) {
+        const found = columns.find(
+          (c) =>
+            getColKey(c) === rawStatus ||
+            (c.name || '').toLowerCase() === rawStatus ||
+            (c.name || '').toLowerCase().replace(/\s+/g, '_') === rawStatus ||
+            ((c.name || '').toLowerCase().replace(/\s+/g, '_') === 'to_do' && rawStatus === 'todo')
+        );
+        targetKey = found
+          ? getColKey(found)
+          : getColKey(columns[0]);
+      }
+
+      if (targetKey && map[targetKey]) {
+        map[targetKey].push(issue);
+      } else if (Object.keys(map).length > 0) {
+        const firstKey = Object.keys(map)[0];
+        map[firstKey].push(issue);
+      }
+    });
+
+    return map;
+  }, [propsIssuesByColumn, columns, issues]);
+
   const issueColumnMap = useMemo(() => {
     const map = {};
-    Object.entries(issuesByColumn).forEach(([colId, issues]) => {
-      issues.forEach((issue) => {
-        map[issue.id || issue._id] = colId;
+    Object.entries(issuesByColumn || {}).forEach(([colId, colIssues]) => {
+      (colIssues || []).forEach((issue) => {
+        const issId = issue.id || issue._id;
+        if (issId != null) map[issId] = colId;
       });
     });
     return map;
@@ -55,12 +111,16 @@ export default function KanbanBoard({
 
   const findColumnForItem = useCallback(
     (id) => {
-      // If the id directly matches a column
-      if (issuesByColumn[id]) return id;
-      // Otherwise look up which column the issue belongs to
-      return issueColumnMap[id] || null;
+      if (id == null) return null;
+      if (issueColumnMap[id] !== undefined) {
+        return issueColumnMap[id];
+      }
+      if (issuesByColumn && issuesByColumn[id] !== undefined) {
+        return id;
+      }
+      return null;
     },
-    [issuesByColumn, issueColumnMap],
+    [issuesByColumn, issueColumnMap]
   );
 
   const handleDragStart = useCallback(
@@ -69,17 +129,12 @@ export default function KanbanBoard({
       const colId = findColumnForItem(active.id);
       if (!colId) return;
       const issue = issuesByColumn[colId]?.find(
-        (i) => (i.id || i._id) === active.id,
+        (i) => (i.id || i._id) === active.id
       );
       setActiveIssue(issue || null);
     },
-    [findColumnForItem, issuesByColumn],
+    [findColumnForItem, issuesByColumn]
   );
-
-  const handleDragOver = useCallback(() => {
-    // Visual feedback is handled by useDroppable isOver in KanbanColumn.
-    // Actual reorder is committed on drag end.
-  }, []);
 
   const handleDragEnd = useCallback(
     (event) => {
@@ -94,44 +149,39 @@ export default function KanbanBoard({
       const activeColumnId = findColumnForItem(activeId);
       let overColumnId = findColumnForItem(overId);
 
-      // If we dropped directly on a column container
-      if (issuesByColumn[overId]) {
+      if (issuesByColumn[overId] !== undefined) {
         overColumnId = overId;
       }
 
       if (!activeColumnId || !overColumnId) return;
 
-      // Determine the new position within the target column
       const overColumnIssues = issuesByColumn[overColumnId] || [];
-      let newPosition = overColumnIssues.length; // default: append at end
+      let newPosition = overColumnIssues.length;
 
       if (activeColumnId === overColumnId) {
-        // Reorder within the same column
         const oldIndex = overColumnIssues.findIndex(
-          (i) => (i.id || i._id) === activeId,
+          (i) => (i.id || i._id) === activeId
         );
         const overIndex = overColumnIssues.findIndex(
-          (i) => (i.id || i._id) === overId,
+          (i) => (i.id || i._id) === overId
         );
-        if (oldIndex === overIndex) return; // no movement
+        if (oldIndex === overIndex) return;
         newPosition = overIndex >= 0 ? overIndex : overColumnIssues.length;
       } else {
-        // Moving between columns
         const overIndex = overColumnIssues.findIndex(
-          (i) => (i.id || i._id) === overId,
+          (i) => (i.id || i._id) === overId
         );
         newPosition = overIndex >= 0 ? overIndex : overColumnIssues.length;
       }
 
-      // Find the target column's status
-      const targetColumn = columns.find(
-        (col) => (col.id || col._id || col.status) === overColumnId,
+      const targetColumn = (columns || []).find(
+        (col) => getColKey(col) === overColumnId
       );
-      const newStatus = targetColumn?.status || overColumnId;
+      let newStatus = targetColumn ? getColKey(targetColumn) : overColumnId;
 
-      onMoveIssue?.(activeId, newStatus, newPosition);
+      handleMove?.(activeId, newStatus, newPosition);
     },
-    [findColumnForItem, issuesByColumn, columns, onMoveIssue],
+    [findColumnForItem, issuesByColumn, columns, handleMove]
   );
 
   const handleDragCancel = useCallback(() => {
@@ -143,28 +193,22 @@ export default function KanbanBoard({
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
       measuring={measuringConfig}
     >
-      <Box
-        sx={{
+      <div
+        style={{
           display: 'flex',
-          gap: 1.5,
-          p: 1,
+          gap: 16,
           overflowX: 'auto',
-          minHeight: 'calc(100vh - 200px)',
+          minHeight: 'calc(100vh - 180px)',
           alignItems: 'flex-start',
-          '&::-webkit-scrollbar': { height: 8 },
-          '&::-webkit-scrollbar-thumb': {
-            bgcolor: 'grey.300',
-            borderRadius: 4,
-          },
+          paddingBottom: 16,
         }}
       >
-        {columns.map((column) => {
-          const colId = column.id || column._id || column.status;
+        {(columns || []).map((column) => {
+          const colId = getColKey(column);
           return (
             <KanbanColumn
               key={colId}
@@ -175,18 +219,17 @@ export default function KanbanBoard({
             />
           );
         })}
-      </Box>
+      </div>
 
-      {/* Drag overlay - rendered at root portal level for smooth dragging */}
       <DragOverlay dropAnimation={null}>
         {activeIssue ? (
-          <Box sx={{ width: 264, opacity: 0.92 }}>
+          <div style={{ width: 280, opacity: 0.9 }}>
             <IssueCardContent
               issue={activeIssue}
               isDragging
-              style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.15)', cursor: 'grabbing' }}
+              style={{ boxShadow: 'var(--shadow-xl)', cursor: 'grabbing' }}
             />
-          </Box>
+          </div>
         ) : null}
       </DragOverlay>
     </DndContext>
