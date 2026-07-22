@@ -74,6 +74,13 @@ export default function TopBar() {
     navigate('/settings');
   };
 
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' && searchValue.trim() && projectId) {
+      navigate(`/issues/${projectId}?search=${encodeURIComponent(searchValue.trim())}`);
+      setSearchValue('');
+    }
+  };
+
   return (
     <AppBar
       position="sticky"
@@ -142,6 +149,7 @@ export default function TopBar() {
             placeholder="Search issues..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleSearch}
             variant="outlined"
             InputProps={{
               startAdornment: (
@@ -197,7 +205,8 @@ export default function TopBar() {
             }}
           >
             <Badge
-              badgeContent={3}
+              variant="dot"
+              invisible
               sx={{
                 '& .MuiBadge-badge': {
                   backgroundColor: '#6366f1',

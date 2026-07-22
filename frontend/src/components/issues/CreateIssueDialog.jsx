@@ -24,6 +24,7 @@ import {
   TaskAlt as TaskIcon,
   AutoStories as StoryIcon,
   Bolt as EpicIcon,
+  AccountTree as SubtaskIcon,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { issueApi, userApi, sprintApi } from '../../api';
@@ -33,6 +34,7 @@ const TYPE_OPTIONS = [
   { value: 'bug', label: 'Bug', icon: <BugIcon sx={{ color: '#ef4444', fontSize: 18 }} /> },
   { value: 'story', label: 'Story', icon: <StoryIcon sx={{ color: '#22c55e', fontSize: 18 }} /> },
   { value: 'epic', label: 'Epic', icon: <EpicIcon sx={{ color: '#a855f7', fontSize: 18 }} /> },
+  { value: 'subtask', label: 'Subtask', icon: <SubtaskIcon sx={{ color: '#64748b', fontSize: 18 }} /> },
 ];
 
 const PRIORITY_OPTIONS = [
@@ -62,7 +64,7 @@ const initialForm = {
   labels: [],
 };
 
-export default function CreateIssueDialog({ open, onClose, projectId, onCreated }) {
+export default function CreateIssueDialog({ open, onClose, projectId, onCreated, parentId }) {
   const [form, setForm] = useState(initialForm);
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -97,12 +99,31 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated 
 
   useEffect(() => {
     if (!open) {
-      setForm(initialForm);
+      setForm(parentId ? { ...initialForm, type: 'subtask' } : initialForm);
     }
-  }, [open]);
+  }, [open, parentId]);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const resolveLabels = async (labelNames) => {
+    const resolvedIds = [];
+    for (const name of labelNames) {
+      const existing = labels.find((l) => l.name?.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        resolvedIds.push(existing.id);
+      } else {
+        try {
+          const res = await issueApi.createLabel({ name, project_id: projectId });
+          resolvedIds.push(res.data.id);
+          setLabels((prev) => [...prev, res.data]);
+        } catch (err) {
+          console.error('Failed to create label:', name, err);
+        }
+      }
+    }
+    return resolvedIds;
   };
 
   const handleSubmit = async () => {
@@ -124,7 +145,10 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated 
       if (form.assignee_id) payload.assignee_id = form.assignee_id;
       if (form.sprint_id) payload.sprint_id = form.sprint_id;
       if (form.story_points !== '') payload.story_points = Number(form.story_points);
-      if (form.labels.length > 0) payload.labels = form.labels;
+      if (parentId) payload.parent_id = parentId;
+      if (form.labels.length > 0) {
+        payload.label_ids = await resolveLabels(form.labels);
+      }
 
       await issueApi.create(payload);
       toast.success('Issue created successfully');

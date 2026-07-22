@@ -1,10 +1,8 @@
 import { createTheme } from '@mui/material/styles';
 
-// Eye-comfortable color palette - soft, muted tones
-// Inspired by modern design systems, easy on the eyes
-const theme = createTheme({
+export const getTheme = (mode = 'light') => createTheme({
   palette: {
-    mode: 'light',
+    mode,
     primary: {
       main: '#6366f1',      // Indigo - calm, professional
       light: '#818cf8',
@@ -17,14 +15,14 @@ const theme = createTheme({
       dark: '#7c3aed',
     },
     background: {
-      default: '#f8fafc',   // Very light blue-gray - easy on eyes
-      paper: '#ffffff',
+      default: mode === 'light' ? '#f8fafc' : '#0f172a',   // Very light blue-gray / dark slate
+      paper: mode === 'light' ? '#ffffff' : '#1e293b',
     },
     text: {
-      primary: '#1e293b',   // Slate 800 - not pure black
-      secondary: '#64748b', // Slate 500
+      primary: mode === 'light' ? '#1e293b' : '#f8fafc',   // Slate 800 / Slate 50
+      secondary: mode === 'light' ? '#64748b' : '#94a3b8', // Slate 500 / Slate 400
     },
-    divider: '#e2e8f0',     // Slate 200
+    divider: mode === 'light' ? '#e2e8f0' : '#334155',     // Slate 200 / Slate 700
     success: {
       main: '#22c55e',
       light: '#dcfce7',
@@ -45,7 +43,6 @@ const theme = createTheme({
       light: '#dbeafe',
       dark: '#2563eb',
     },
-    // Custom colors for issue types and priorities
     grey: {
       50: '#f8fafc',
       100: '#f1f5f9',
@@ -131,7 +128,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          border: '1px solid #e2e8f0',
+          border: mode === 'light' ? '1px solid #e2e8f0' : '1px solid #334155',
           boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
         },
       },
@@ -158,10 +155,10 @@ const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '& fieldset': {
-              borderColor: '#e2e8f0',
+              borderColor: mode === 'light' ? '#e2e8f0' : '#334155',
             },
             '&:hover fieldset': {
-              borderColor: '#94a3b8',
+              borderColor: mode === 'light' ? '#94a3b8' : '#475569',
             },
           },
         },
@@ -187,9 +184,9 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           '&.Mui-selected': {
-            backgroundColor: '#eef2ff',
+            backgroundColor: mode === 'light' ? '#eef2ff' : '#1e293b',
             '&:hover': {
-              backgroundColor: '#e0e7ff',
+              backgroundColor: mode === 'light' ? '#e0e7ff' : '#334155',
             },
           },
         },
@@ -198,4 +195,4 @@ const theme = createTheme({
   },
 });
 
-export default theme;
+export default getTheme;

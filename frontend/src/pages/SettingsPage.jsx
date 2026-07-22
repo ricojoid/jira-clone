@@ -11,7 +11,6 @@ import {
   Grid,
   Switch,
   FormControlLabel,
-  Alert,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -23,14 +22,22 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api';
+import { useThemeMode } from '../context/ThemeContext';
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { mode, toggleTheme } = useThemeMode();
   const [profile, setProfile] = useState({
     full_name: user?.full_name || '',
     avatar_url: user?.avatar_url || '',
   });
   const [saving, setSaving] = useState(false);
+  const [passwords, setPasswords] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleProfileSave = async () => {
     setSaving(true);
@@ -41,6 +48,30 @@ export default function SettingsPage() {
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwords.new_password !== passwords.confirm_password) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (passwords.new_password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      await authApi.changePassword({
+        current_password: passwords.current_password,
+        new_password: passwords.new_password,
+      });
+      toast.success('Password changed successfully');
+      setPasswords({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -184,10 +215,24 @@ export default function SettingsPage() {
           </Box>
           <Divider sx={{ mb: 3 }} />
 
-          <Alert severity="info" sx={{ borderRadius: 2 }}>
-            Theme customization coming soon. Currently using the default light
-            theme optimized for eye comfort.
-          </Alert>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={mode === 'dark'}
+                onChange={toggleTheme}
+                color="primary"
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body1">Dark mode</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Switch between light and dark theme
+                </Typography>
+              </Box>
+            }
+            sx={{ alignItems: 'flex-start', ml: 0 }}
+          />
         </CardContent>
       </Card>
 
@@ -200,9 +245,55 @@ export default function SettingsPage() {
           </Box>
           <Divider sx={{ mb: 3 }} />
 
-          <Alert severity="warning" sx={{ borderRadius: 2 }}>
-            Password change functionality coming soon.
-          </Alert>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Current Password"
+                type="password"
+                value={passwords.current_password}
+                onChange={(e) =>
+                  setPasswords({ ...passwords, current_password: e.target.value })
+                }
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="New Password"
+                type="password"
+                value={passwords.new_password}
+                onChange={(e) =>
+                  setPasswords({ ...passwords, new_password: e.target.value })
+                }
+                size="small"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Confirm New Password"
+                type="password"
+                value={passwords.confirm_password}
+                onChange={(e) =>
+                  setPasswords({ ...passwords, confirm_password: e.target.value })
+                }
+                size="small"
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button
+              variant="contained"
+              onClick={handlePasswordChange}
+              disabled={changingPassword || !passwords.current_password || !passwords.new_password || !passwords.confirm_password}
+              sx={{ bgcolor: '#ef4444', '&:hover': { bgcolor: '#dc2626' } }}
+            >
+              {changingPassword ? 'Changing...' : 'Change Password'}
+            </Button>
+          </Box>
         </CardContent>
       </Card>
     </Box>

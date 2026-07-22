@@ -12,6 +12,7 @@ from app.schemas.user import (
     UserCreate,
     UserResponse,
     UserUpdate,
+    PasswordChange,
     Token,
     LoginRequest,
 )
@@ -69,3 +70,16 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.put("/me/password")
+def change_password(
+    data: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    current_user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}

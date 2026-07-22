@@ -94,6 +94,7 @@ def get_issue(
             joinedload(Issue.labels),
             joinedload(Issue.comments).joinedload(Comment.author),
             joinedload(Issue.children),
+            joinedload(Issue.parent),
         )
         .filter(Issue.id == issue_id)
         .first()

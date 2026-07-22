@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -30,6 +30,7 @@ import {
   TaskAlt as TaskIcon,
   AutoStories as StoryIcon,
   Bolt as EpicIcon,
+  AccountTree as SubtaskIcon,
   InboxOutlined as EmptyIcon,
 } from '@mui/icons-material';
 import { projectApi, issueApi } from '../api';
@@ -70,15 +71,17 @@ const TYPE_ICONS = {
   task: <TaskIcon sx={{ color: '#3b82f6', fontSize: 20 }} />,
   story: <StoryIcon sx={{ color: '#22c55e', fontSize: 20 }} />,
   epic: <EpicIcon sx={{ color: '#a855f7', fontSize: 20 }} />,
+  subtask: <SubtaskIcon sx={{ color: '#64748b', fontSize: 20 }} />,
 };
 
 const STATUSES = ['todo', 'in_progress', 'in_review', 'done'];
 const PRIORITIES = ['highest', 'high', 'medium', 'low', 'lowest'];
-const TYPES = ['bug', 'task', 'story', 'epic'];
+const TYPES = ['bug', 'task', 'story', 'epic', 'subtask'];
 
 export default function IssuesPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [issues, setIssues] = useState([]);
   const [project, setProject] = useState(null);
@@ -87,7 +90,7 @@ export default function IssuesPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   // Filters
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');

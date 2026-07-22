@@ -105,6 +105,7 @@ class IssueResponse(IssueBase):
     labels: Optional[List[LabelResponse]] = []
     comments: Optional[List[CommentResponse]] = []
     children: Optional[List[IssueBrief]] = []
+    parent: Optional[IssueBrief] = None
 
     class Config:
         from_attributes = True

@@ -31,10 +31,12 @@ import {
   TaskAlt as TaskIcon,
   AutoStories as StoryIcon,
   Bolt as EpicIcon,
+  AccountTree as SubtaskIcon,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 import { issueApi, userApi, sprintApi } from '../api';
 import { useAuth } from '../context/AuthContext';
+import CreateIssueDialog from '../components/issues/CreateIssueDialog';
 
 const STATUS_OPTIONS = [
   { value: 'todo', label: 'To Do', color: '#94a3b8' },
@@ -56,6 +58,7 @@ const TYPE_OPTIONS = [
   { value: 'task', label: 'Task', icon: <TaskIcon sx={{ color: '#3b82f6', fontSize: 18 }} /> },
   { value: 'story', label: 'Story', icon: <StoryIcon sx={{ color: '#22c55e', fontSize: 18 }} /> },
   { value: 'epic', label: 'Epic', icon: <EpicIcon sx={{ color: '#a855f7', fontSize: 18 }} /> },
+  { value: 'subtask', label: 'Subtask', icon: <SubtaskIcon sx={{ color: '#64748b', fontSize: 18 }} /> },
 ];
 
 const sidebarFieldSx = {
@@ -91,6 +94,7 @@ export default function IssueDetailPage() {
   // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [subtaskDialogOpen, setSubtaskDialogOpen] = useState(false);
 
   const fetchIssue = useCallback(async () => {
     try {
@@ -129,11 +133,38 @@ export default function IssueDetailPage() {
     fetchIssue();
   }, [fetchIssue]);
 
+  const resolveLabels = async (labelNames) => {
+    const resolvedIds = [];
+    for (const name of labelNames) {
+      const existing = labels.find((l) => l.name?.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        resolvedIds.push(existing.id);
+      } else {
+        try {
+          const res = await issueApi.createLabel({ name, project_id: issue.project_id });
+          resolvedIds.push(res.data.id);
+          setLabels((prev) => [...prev, res.data]);
+        } catch (err) {
+          console.error('Failed to create label:', name, err);
+        }
+      }
+    }
+    return resolvedIds;
+  };
+
   const updateField = async (field, value) => {
     try {
-      const apiField = field === 'type' ? 'issue_type' : field;
-      await issueApi.update(issueId, { [apiField]: value });
-      setIssue((prev) => ({ ...prev, [field]: value, [apiField]: value }));
+      let apiField = field === 'type' ? 'issue_type' : field;
+      let apiValue = value;
+
+      if (field === 'labels') {
+        apiField = 'label_ids';
+        apiValue = await resolveLabels(value);
+      }
+
+      const res = await issueApi.update(issueId, { [apiField]: apiValue });
+      setIssue(res.data);
+      setComments(res.data.comments || []);
       toast.success('Updated successfully');
     } catch (err) {
       console.error('Failed to update:', err);
@@ -360,6 +391,78 @@ export default function IssueDetailPage() {
             )}
           </Paper>
 
+          {/* Child Issues / Subtasks */}
+          <Paper
+            elevation={0}
+            sx={{ mt: 3, p: 2.5, border: '1px solid #e2e8f0', borderRadius: 2, bgcolor: '#ffffff' }}
+          >
+            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="subtitle2" fontWeight={700} color="#475569">
+                {issue.issue_type === 'epic' ? 'Linked Issues' : 'Subtasks'} ({issue.children?.length || 0})
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setSubtaskDialogOpen(true)}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: 12,
+                  borderColor: '#c7d2fe',
+                  color: '#6366f1',
+                  '&:hover': { borderColor: '#6366f1', bgcolor: '#eef2ff' },
+                }}
+              >
+                + {issue.issue_type === 'epic' ? 'Add Issue' : 'Add Subtask'}
+              </Button>
+            </Stack>
+            {issue.children?.length > 0 ? (
+              <Stack spacing={1}>
+                {issue.children.map((child) => {
+                  const childType = TYPE_OPTIONS.find((t) => t.value === child.issue_type) || TYPE_OPTIONS[1];
+                  return (
+                    <Box
+                      key={child.id}
+                      onClick={() => navigate(`/issue/${child.id}`)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        p: 1.5,
+                        borderRadius: 1.5,
+                        border: '1px solid #f1f5f9',
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: '#f8fafc' },
+                      }}
+                    >
+                      {childType.icon}
+                      <Typography variant="body2" fontWeight={600} color="#64748b" fontSize={13}>
+                        {child.issue_key}
+                      </Typography>
+                      <Typography variant="body2" color="#1e293b" fontSize={13} noWrap sx={{ flex: 1 }}>
+                        {child.title}
+                      </Typography>
+                      <Chip
+                        label={STATUS_OPTIONS.find((s) => s.value === child.status)?.label || child.status}
+                        size="small"
+                        sx={{
+                          bgcolor: `${STATUS_OPTIONS.find((s) => s.value === child.status)?.color || '#94a3b8'}15`,
+                          color: STATUS_OPTIONS.find((s) => s.value === child.status)?.color || '#94a3b8',
+                          fontWeight: 600,
+                          fontSize: 11,
+                        }}
+                      />
+                    </Box>
+                  );
+                })}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="#94a3b8">
+                No {issue.issue_type === 'epic' ? 'linked issues' : 'subtasks'} yet.
+              </Typography>
+            )}
+          </Paper>
+
           {/* Comments */}
           <Paper
             elevation={0}
@@ -573,6 +676,36 @@ export default function IssueDetailPage() {
                 </Select>
               </Box>
 
+              {/* Parent Issue */}
+              {issue.parent && (
+                <Box>
+                  <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
+                    Parent Issue
+                  </Typography>
+                  <Box
+                    onClick={() => navigate(`/issue/${issue.parent_id}`)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      p: 1,
+                      borderRadius: 1,
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: '#f8fafc' },
+                    }}
+                  >
+                    {(TYPE_OPTIONS.find((t) => t.value === issue.parent.issue_type) || TYPE_OPTIONS[1]).icon}
+                    <Typography variant="body2" fontWeight={600} color="#6366f1" fontSize={13}>
+                      {issue.parent.issue_key}
+                    </Typography>
+                    <Typography variant="body2" color="#475569" fontSize={13} noWrap>
+                      {issue.parent.title}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+
               {/* Story Points */}
               <Box>
                 <Typography variant="caption" fontWeight={700} color="#64748b" mb={0.5} display="block">
@@ -602,14 +735,14 @@ export default function IssueDetailPage() {
                   multiple
                   freeSolo
                   options={labels.map((l) => l.name || l)}
-                  value={issue.labels || []}
+                  value={(issue.labels || []).map((l) => typeof l === 'string' ? l : l.name)}
                   onChange={(_, newVal) => updateField('labels', newVal)}
                   renderTags={(value, getTagProps) =>
                     value.map((label, index) => (
                       <Chip
                         {...getTagProps({ index })}
-                        key={label}
-                        label={label}
+                        key={typeof label === 'string' ? label : label.name}
+                        label={typeof label === 'string' ? label : label.name}
                         size="small"
                         sx={{
                           bgcolor: '#eef2ff',
@@ -740,6 +873,17 @@ export default function IssueDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <CreateIssueDialog
+        open={subtaskDialogOpen}
+        onClose={() => setSubtaskDialogOpen(false)}
+        projectId={issue.project_id}
+        parentId={issue.id}
+        onCreated={() => {
+          setSubtaskDialogOpen(false);
+          fetchIssue();
+        }}
+      />
     </Box>
   );
 }
