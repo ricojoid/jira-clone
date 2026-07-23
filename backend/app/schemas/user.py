@@ -42,7 +42,7 @@ class StatusUpdate(BaseModel):
 class UserResponse(UserBase):
     id: int
     avatar_url: Optional[str] = None
-    role: str = "pm"
+    role: Optional[str] = "pm"
     is_active: bool
     created_at: datetime
 

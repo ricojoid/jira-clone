@@ -14,7 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { projectApi, sprintApi, issueApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge, PriorityBadge } from '../components/ui/Badge';
+import { StatusBadge, PriorityBadge, DeadlineBadge } from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 
@@ -472,8 +472,9 @@ export default function DashboardPage() {
                     className="card card-hover"
                     style={{ padding: 12, cursor: 'pointer', backgroundColor: 'var(--bg-app)' }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap', gap: 4 }}>
                       <PriorityBadge priority={issue.priority} />
+                      {issue.due_date && <DeadlineBadge dueDate={issue.due_date} status={issue.status} compact />}
                       <StatusBadge status={issue.status} />
                     </div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

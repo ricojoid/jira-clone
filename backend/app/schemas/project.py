@@ -55,7 +55,7 @@ class ProjectMemberAdd(BaseModel):
 class ProjectMemberResponse(BaseModel):
     id: int
     user: UserBrief
-    role: str
+    role: Optional[str] = "member"
     joined_at: datetime
 
     class Config:

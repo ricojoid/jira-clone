@@ -2,8 +2,9 @@ import React, { forwardRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { TypeIcon, PriorityBadge } from '../ui/Badge';
+import { TypeIcon, PriorityBadge, DeadlineBadge } from '../ui/Badge';
 import Avatar from '../ui/Avatar';
+import { getDeadlineStatus } from '../../utils/deadline';
 
 export const IssueCardContent = forwardRef(function IssueCardContent(
   { issue, onIssueClick, isDragging, style, listeners, attributes, setNodeRef },
@@ -20,6 +21,16 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
   const title = issue.title || issue.summary;
   const issueKey = issue.issue_key || issue.key || issue.issueKey;
   const storyPoints = issue.story_points ?? issue.storyPoints;
+  const dueDate = issue.due_date || issue.dueDate;
+
+  const deadlineInfo = getDeadlineStatus(dueDate, issue.status);
+
+  let borderStyle = '1px solid var(--border-color)';
+  if (deadlineInfo?.state === 'overdue') {
+    borderStyle = '1px solid rgba(239, 68, 68, 0.4)';
+  } else if (deadlineInfo?.state === 'today') {
+    borderStyle = '1px solid rgba(245, 158, 11, 0.5)';
+  }
 
   return (
     <div
@@ -32,17 +43,25 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
         opacity: isDragging ? 0.4 : 1,
         marginBottom: 10,
         backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
+        border: borderStyle,
+        borderLeft: deadlineInfo?.state === 'overdue' 
+          ? '4px solid #ef4444' 
+          : deadlineInfo?.state === 'today' 
+          ? '4px solid #f59e0b' 
+          : borderStyle,
         borderRadius: 'var(--radius-md)',
         ...style,
       }}
       {...attributes}
       {...listeners}
     >
-      {/* Labels */}
-      {issue.labels && issue.labels.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-          {issue.labels.map((label) => {
+      {/* Labels & Deadline */}
+      {((issue.labels && issue.labels.length > 0) || dueDate) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8, alignItems: 'center' }}>
+          {dueDate && (
+            <DeadlineBadge dueDate={dueDate} status={issue.status} compact />
+          )}
+          {issue.labels && issue.labels.map((label) => {
             const labelName = typeof label === 'string' ? label : label.name;
             return (
               <span
@@ -81,7 +100,7 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
 
       {/* Footer Row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <TypeIcon type={issue.issue_type || issue.type} size={15} />
 
           <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--primary)' }}>

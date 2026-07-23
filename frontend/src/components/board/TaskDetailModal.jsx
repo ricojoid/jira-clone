@@ -7,12 +7,13 @@ import { useAuth } from '../../context/AuthContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
-import { TYPE_META, PRIORITY_META, STATUS_META, TypeIcon, StatusBadge, PriorityBadge } from '../ui/Badge';
+import { TYPE_META, PRIORITY_META, STATUS_META, TypeIcon, StatusBadge, PriorityBadge, DeadlineBadge } from '../ui/Badge';
 import CreateIssueDialog from '../issues/CreateIssueDialog';
+import { formatDateForDateInput } from '../../utils/deadline';
 
 export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isPM } = useAuth();
 
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +146,10 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   };
 
   const handleDelete = async () => {
+    if (!isPM) {
+      toast.error('Only Project Managers or Super Admins can delete issues');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this issue?')) return;
     try {
       await issueApi.delete(issueId);
@@ -153,7 +158,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
       if (onUpdated) onUpdated();
     } catch (err) {
       console.error('Failed to delete:', err);
-      toast.error('Failed to delete issue');
+      toast.error(err.response?.data?.detail || 'Failed to delete issue');
     }
   };
 
@@ -462,6 +467,19 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
               </div>
 
               <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Due Date (Deadline)</span>
+                  {issue.due_date && <DeadlineBadge dueDate={issue.due_date} status={issue.status} compact />}
+                </label>
+                <input
+                  className="form-input"
+                  type="date"
+                  value={formatDateForDateInput(issue.due_date)}
+                  onChange={(e) => updateField('due_date', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                />
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Story Points</label>
                 <input
                   className="form-input"
@@ -486,9 +504,11 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 >
                   Full View
                 </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={handleDelete}>
-                  Delete
-                </Button>
+                {isPM && (
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={handleDelete}>
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           </div>

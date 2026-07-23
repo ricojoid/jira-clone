@@ -25,12 +25,18 @@ def _auto_migrate_and_seed():
                 if 'role' not in user_cols:
                     conn.execute(text("ALTER TABLE users ADD role VARCHAR(50) DEFAULT 'pm'"))
                     conn.commit()
+                conn.execute(text("UPDATE users SET role = 'pm' WHERE role IS NULL"))
+                conn.commit()
 
             if 'projects' in tables:
                 proj_cols = [c['name'] for c in inspector.get_columns('projects')]
                 if 'sdlc_type' not in proj_cols:
                     conn.execute(text("ALTER TABLE projects ADD sdlc_type VARCHAR(20) DEFAULT 'scrum'"))
                     conn.commit()
+
+            if 'project_members' in tables:
+                conn.execute(text("UPDATE project_members SET role = 'member' WHERE role IS NULL"))
+                conn.commit()
     except Exception as e:
         print("Auto-migration warning:", e)
 

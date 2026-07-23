@@ -17,7 +17,9 @@ const WATERFALL_DEFAULT_PHASES = [
   { code: 'MA', name: 'Maintenance' },
 ];
 
-const initialForm = {
+import { formatDateForDateInput } from '../../utils/deadline';
+
+const getInitialForm = () => ({
   title: '',
   description: '',
   type: 'task',
@@ -25,11 +27,12 @@ const initialForm = {
   assignee_id: '',
   sprint_id: '',
   story_points: '',
+  due_date: formatDateForDateInput(new Date()),
   labels: [],
-};
+});
 
 export default function CreateIssueDialog({ open, onClose, projectId, onCreated, parentId }) {
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(getInitialForm);
   const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -84,7 +87,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
   useEffect(() => {
     if (!open) {
-      setForm(parentId ? { ...initialForm, type: 'subtask' } : initialForm);
+      setForm(parentId ? { ...getInitialForm(), type: 'subtask' } : getInitialForm());
       setTagInput('');
     }
   }, [open, parentId]);
@@ -167,6 +170,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         }
       }
       if (form.story_points !== '') payload.story_points = Number(form.story_points);
+      if (form.due_date) payload.due_date = new Date(form.due_date).toISOString();
       if (parentId) payload.parent_id = Number(parentId);
       if (form.labels.length > 0) {
         payload.label_ids = await resolveLabels(form.labels);
@@ -271,6 +275,16 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
+          <label className="form-label">Due Date (Deadline)</label>
+          <input
+            className="form-input"
+            type="date"
+            value={form.due_date}
+            onChange={handleChange('due_date')}
+          />
+        </div>
+
+        <div className="form-group">
           <label className="form-label">Story Points</label>
           <input
             className="form-input"
@@ -282,18 +296,18 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
             onChange={handleChange('story_points')}
           />
         </div>
+      </div>
 
-        <div className="form-group">
-          <label className="form-label">Labels (press Enter or comma)</label>
-          <input
-            className="form-input"
-            type="text"
-            placeholder="Add label..."
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleAddTag}
-          />
-        </div>
+      <div className="form-group">
+        <label className="form-label">Labels (press Enter or comma)</label>
+        <input
+          className="form-input"
+          type="text"
+          placeholder="Add label..."
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={handleAddTag}
+        />
       </div>
 
       {form.labels.length > 0 && (

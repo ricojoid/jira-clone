@@ -68,3 +68,66 @@ export function PriorityBadge({ priority }) {
     </span>
   );
 }
+
+import { Calendar, CalendarX, AlertTriangle } from 'lucide-react';
+import { getDeadlineStatus } from '../../utils/deadline';
+
+export function DeadlineBadge({ dueDate, status, compact = false }) {
+  const info = getDeadlineStatus(dueDate, status);
+  if (!info) return null;
+
+  let bg = 'var(--bg-subtle, #f1f5f9)';
+  let color = 'var(--text-muted, #64748b)';
+  let border = '1px solid var(--border-color, #e2e8f0)';
+  let Icon = Calendar;
+  let fontWeight = 500;
+
+  if (info.state === 'overdue') {
+    bg = 'rgba(239, 68, 68, 0.12)';
+    color = '#ef4444';
+    border = '1px solid rgba(239, 68, 68, 0.35)';
+    Icon = CalendarX;
+    fontWeight = 700;
+  } else if (info.state === 'today') {
+    bg = 'rgba(245, 158, 11, 0.16)';
+    color = '#d97706';
+    border = '1px solid rgba(245, 158, 11, 0.4)';
+    Icon = AlertTriangle;
+    fontWeight = 700;
+  } else if (info.state === 'soon') {
+    bg = 'rgba(234, 179, 8, 0.12)';
+    color = '#ca8a04';
+    border = '1px solid rgba(234, 179, 8, 0.3)';
+    Icon = Clock;
+    fontWeight = 600;
+  } else if (info.state === 'done') {
+    bg = 'rgba(34, 197, 94, 0.1)';
+    color = '#16a34a';
+    border = '1px solid rgba(34, 197, 94, 0.25)';
+    Icon = CheckCircle2;
+  }
+
+  return (
+    <span
+      className="badge"
+      title={`Deadline: ${info.formattedDate}`}
+      style={{
+        backgroundColor: bg,
+        color: color,
+        border: border,
+        fontWeight: fontWeight,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        fontSize: compact ? '0.675rem' : '0.75rem',
+        padding: compact ? '2px 6px' : '3px 8px',
+        borderRadius: '6px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <Icon size={compact ? 11 : 13} />
+      {compact ? info.text : info.label}
+    </span>
+  );
+}
+

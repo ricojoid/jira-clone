@@ -49,6 +49,7 @@ class IssueBase(BaseModel):
     issue_type: Optional[str] = "task"
     priority: Optional[str] = "medium"
     story_points: Optional[int] = None
+    due_date: Optional[datetime] = None
 
 
 class IssueCreate(IssueBase):
@@ -86,6 +87,7 @@ class IssueBrief(BaseModel):
     project_id: Optional[int] = None
     sprint_id: Optional[int] = None
     assignee_id: Optional[int] = None
+    due_date: Optional[datetime] = None
     assignee: Optional[UserBrief] = None
     labels: Optional[List[LabelResponse]] = []
 

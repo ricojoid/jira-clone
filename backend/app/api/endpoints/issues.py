@@ -231,6 +231,12 @@ def delete_issue(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    user_role = (getattr(current_user, 'role', 'pm') or 'pm').lower()
+    if user_role not in ["pm", "project_manager", "admin", "super_admin", "super admin", "superadmin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya user dengan role Project Manager (PM) atau Super Admin yang dapat menghapus issue",
+        )
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")

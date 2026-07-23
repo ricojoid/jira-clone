@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Play, CheckCircle2, Edit2, Trash2, Calendar, Target, Layers, Sparkles } from 'lucide-react';
+import { Plus, Play, CheckCircle2, Edit2, Trash2, Calendar, Target, Layers, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sprintApi, issueApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -278,7 +278,7 @@ export default function SprintsPage() {
 
         <div style={{ display: 'flex', gap: 8 }}>
           {isWaterfall && sprints.length === 0 && isPM && (
-            <Button variant="secondary" icon={Sparkles} onClick={handleInitWaterfallPhases} disabled={submitting}>
+            <Button variant="secondary" icon={Zap} onClick={handleInitWaterfallPhases} disabled={submitting}>
               Auto-Create 8 Standard Phases
             </Button>
           )}
@@ -305,7 +305,7 @@ export default function SprintsPage() {
           {isPM && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
               {isWaterfall ? (
-                <Button variant="primary" icon={Sparkles} onClick={handleInitWaterfallPhases} disabled={submitting}>
+                <Button variant="primary" icon={Zap} onClick={handleInitWaterfallPhases} disabled={submitting}>
                   Auto-Create 8 Standard Phases
                 </Button>
               ) : (

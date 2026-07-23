@@ -6,7 +6,7 @@ import { issueApi, sprintApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
-import { StatusBadge, PriorityBadge, TypeIcon } from '../components/ui/Badge';
+import { StatusBadge, PriorityBadge, TypeIcon, DeadlineBadge } from '../components/ui/Badge';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
 
 export default function BacklogPage() {
@@ -131,6 +131,7 @@ export default function BacklogPage() {
 
   const renderIssueRow = (issue) => {
     const issueId = issue.id || issue._id;
+    const dueDate = issue.due_date || issue.dueDate;
     return (
       <div
         key={issueId}
@@ -152,6 +153,7 @@ export default function BacklogPage() {
         <TypeIcon type={issue.issue_type || issue.type} size={16} />
         <span style={{ fontWeight: 700, color: 'var(--primary)', minWidth: 80 }}>{issue.issue_key}</span>
         <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-main)' }}>{issue.title}</span>
+        {dueDate && <DeadlineBadge dueDate={dueDate} status={issue.status} compact />}
         <StatusBadge status={issue.status} />
         <PriorityBadge priority={issue.priority} />
         <Avatar name={issue.assignee?.full_name || issue.assignee?.username || issue.assignee?.name} size={24} />

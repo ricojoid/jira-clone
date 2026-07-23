@@ -6,13 +6,14 @@ import { issueApi, userApi, sprintApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
-import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META } from '../components/ui/Badge';
+import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META, DeadlineBadge } from '../components/ui/Badge';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
+import { formatDateForDateInput } from '../utils/deadline';
 
 export default function IssueDetailPage() {
   const { issueId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isPM } = useAuth();
 
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -140,6 +141,10 @@ export default function IssueDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (!isPM) {
+      toast.error('Only Project Managers or Super Admins can delete issues');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this issue?')) return;
     try {
       await issueApi.delete(issueId);
@@ -147,7 +152,7 @@ export default function IssueDetailPage() {
       navigate(`/board/${issue?.project_id}`);
     } catch (err) {
       console.error('Failed to delete:', err);
-      toast.error('Failed to delete issue');
+      toast.error(err.response?.data?.detail || 'Failed to delete issue');
     }
   };
 
@@ -197,9 +202,11 @@ export default function IssueDetailPage() {
           <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(`/board/${issue.project_id}`)}>
             Back to Board
           </Button>
-          <Button variant="danger" icon={Trash2} onClick={handleDelete}>
-            Delete Issue
-          </Button>
+          {isPM && (
+            <Button variant="danger" icon={Trash2} onClick={handleDelete}>
+              Delete Issue
+            </Button>
+          )}
         </div>
       </div>
 
@@ -440,6 +447,19 @@ export default function IssueDetailPage() {
                   <option key={s.id || s._id} value={s.id || s._id}>{s.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Due Date (Deadline)</span>
+                {issue.due_date && <DeadlineBadge dueDate={issue.due_date} status={issue.status} compact />}
+              </label>
+              <input
+                className="form-input"
+                type="date"
+                value={formatDateForDateInput(issue.due_date)}
+                onChange={(e) => updateField('due_date', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
             </div>
 
             <div className="form-group">

@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Plus, Inbox, Filter } from 'lucide-react';
+import { Search, Plus, Inbox, Filter, Calendar } from 'lucide-react';
 import { projectApi, issueApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
 import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
-import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META } from '../components/ui/Badge';
+import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META, DeadlineBadge } from '../components/ui/Badge';
+
+import DateFilterInput from '../components/ui/DateFilterInput';
 
 export default function IssuesPage() {
   const { projectId } = useParams();
@@ -26,6 +28,8 @@ export default function IssuesPage() {
   const [priorityFilter, setPriorityFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
+  const [filterDueDateFrom, setFilterDueDateFrom] = useState('');
+  const [filterDueDateTo, setFilterDueDateTo] = useState('');
 
   const [sortBy, setSortBy] = useState('created_at');
   const [sortDir, setSortDir] = useState('desc');
@@ -75,6 +79,28 @@ export default function IssuesPage() {
     if (typeFilter) result = result.filter((i) => (i.issue_type || i.type) === typeFilter);
     if (assigneeFilter) result = result.filter((i) => (i.assignee_id || i.assignee?.id) === Number(assigneeFilter) || (i.assignee_id || i.assignee?.id) === assigneeFilter);
 
+    if (filterDueDateFrom) {
+      result = result.filter((i) => {
+        const dueDateStr = i.due_date || i.dueDate;
+        if (!dueDateStr) return false;
+        const issueDate = new Date(dueDateStr);
+        const fromDate = new Date(filterDueDateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        return issueDate >= fromDate;
+      });
+    }
+
+    if (filterDueDateTo) {
+      result = result.filter((i) => {
+        const dueDateStr = i.due_date || i.dueDate;
+        if (!dueDateStr) return false;
+        const issueDate = new Date(dueDateStr);
+        const toDate = new Date(filterDueDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        return issueDate <= toDate;
+      });
+    }
+
     result.sort((a, b) => {
       let aVal, bVal;
       if (sortBy === 'priority') {
@@ -89,7 +115,7 @@ export default function IssuesPage() {
     });
 
     return result;
-  }, [issues, search, statusFilter, priorityFilter, typeFilter, assigneeFilter, sortBy, sortDir]);
+  }, [issues, search, statusFilter, priorityFilter, typeFilter, assigneeFilter, filterDueDateFrom, filterDueDateTo, sortBy, sortDir]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
@@ -133,28 +159,28 @@ export default function IssuesPage() {
           />
         </div>
 
-        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <select className="form-select" style={{ width: 'auto', minWidth: 135, height: 36, padding: '0 30px 0 10px', fontSize: '0.8rem' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">All Statuses</option>
           {Object.entries(STATUS_META).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
 
-        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+        <select className="form-select" style={{ width: 'auto', minWidth: 135, height: 36, padding: '0 30px 0 10px', fontSize: '0.8rem' }} value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
           <option value="">All Priorities</option>
           {Object.entries(PRIORITY_META).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
 
-        <select className="form-select" style={{ width: 130, height: 36, fontSize: '0.8rem' }} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+        <select className="form-select" style={{ width: 'auto', minWidth: 120, height: 36, padding: '0 30px 0 10px', fontSize: '0.8rem' }} value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
           <option value="">All Types</option>
           {Object.entries(TYPE_META).map(([k, v]) => (
             <option key={k} value={k}>{v.label}</option>
           ))}
         </select>
 
-        <select className="form-select" style={{ width: 140, height: 36, fontSize: '0.8rem' }} value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
+        <select className="form-select" style={{ width: 'auto', minWidth: 155, height: 36, padding: '0 30px 0 10px', fontSize: '0.8rem' }} value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
           <option value="">All Assignees</option>
           {members.map((m) => {
             const u = m.user || m;
@@ -165,6 +191,26 @@ export default function IssuesPage() {
             );
           })}
         </select>
+
+        {/* Due Date Range Filters */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)', borderLeft: '1px solid var(--border-color)', paddingLeft: 10 }}>
+          <Calendar size={14} />
+          <span>Due From:</span>
+          <DateFilterInput
+            value={filterDueDateFrom}
+            onChange={(e) => setFilterDueDateFrom(e.target.value)}
+            placeholder="--/--/----"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <span>To:</span>
+          <DateFilterInput
+            value={filterDueDateTo}
+            onChange={(e) => setFilterDueDateTo(e.target.value)}
+            placeholder="--/--/----"
+          />
+        </div>
       </div>
 
       {/* Issues Table */}
@@ -188,6 +234,7 @@ export default function IssuesPage() {
                 <th style={{ padding: '12px 16px' }}>Title</th>
                 <th style={{ padding: '12px 16px', width: 130 }}>Status</th>
                 <th style={{ padding: '12px 16px', width: 110 }}>Priority</th>
+                <th style={{ padding: '12px 16px', width: 130 }}>Deadline</th>
                 <th style={{ padding: '12px 16px', width: 160 }}>Assignee</th>
                 <th style={{ padding: '12px 16px', width: 120 }}>Created</th>
               </tr>
@@ -209,6 +256,9 @@ export default function IssuesPage() {
                   <td style={{ padding: '12px 16px', fontWeight: 600 }}>{issue.title}</td>
                   <td style={{ padding: '12px 16px' }}><StatusBadge status={issue.status} /></td>
                   <td style={{ padding: '12px 16px' }}><PriorityBadge priority={issue.priority} /></td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <DeadlineBadge dueDate={issue.due_date || issue.dueDate} status={issue.status} compact />
+                  </td>
                   <td style={{ padding: '12px 16px' }}>
                     {issue.assignee ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

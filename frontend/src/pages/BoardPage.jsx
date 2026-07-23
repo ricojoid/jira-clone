@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { boardApi, issueApi, userApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,8 @@ import KanbanBoard from '../components/board/KanbanBoard';
 import TaskDetailModal from '../components/board/TaskDetailModal';
 import CreateIssueDialog from '../components/issues/CreateIssueDialog';
 import Button from '../components/ui/Button';
+
+import DateFilterInput from '../components/ui/DateFilterInput';
 
 const DEFAULT_COLUMNS = [
   { id: 'todo', name: 'To Do', status: 'todo', color: '#94a3b8' },
@@ -27,10 +29,12 @@ export default function BoardPage() {
   const [assignees, setAssignees] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // Filters (default to empty string so all tasks show by default)
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [filterDueDateFrom, setFilterDueDateFrom] = useState('');
+  const [filterDueDateTo, setFilterDueDateTo] = useState('');
 
   // Modals
   const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -85,6 +89,28 @@ export default function BoardPage() {
     fetchBoardData();
   }, [fetchBoardData]);
 
+  // Filter issues by Due Date Range (From - To)
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue) => {
+      const dueDateStr = issue.due_date || issue.dueDate;
+      if (filterDueDateFrom) {
+        if (!dueDateStr) return false;
+        const issueDate = new Date(dueDateStr);
+        const fromDate = new Date(filterDueDateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        if (issueDate < fromDate) return false;
+      }
+      if (filterDueDateTo) {
+        if (!dueDateStr) return false;
+        const issueDate = new Date(dueDateStr);
+        const toDate = new Date(filterDueDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        if (issueDate > toDate) return false;
+      }
+      return true;
+    });
+  }, [issues, filterDueDateFrom, filterDueDateTo]);
+
   const handleIssueMove = async (issueId, targetStatus, newIndex) => {
     setIssues((prev) =>
       prev.map((iss) => {
@@ -123,9 +149,11 @@ export default function BoardPage() {
     setFilterAssignee('');
     setFilterPriority('');
     setFilterType('');
+    setFilterDueDateFrom('');
+    setFilterDueDateTo('');
   };
 
-  const hasActiveFilters = filterAssignee || filterPriority || filterType;
+  const hasActiveFilters = filterAssignee || filterPriority || filterType || filterDueDateFrom || filterDueDateTo;
 
   if (loading && !project) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading board...</div>;
@@ -185,7 +213,7 @@ export default function BoardPage() {
           className="form-select"
           value={filterAssignee}
           onChange={(e) => setFilterAssignee(e.target.value)}
-          style={{ width: 'auto', minWidth: 140, height: 32, fontSize: '0.8rem' }}
+          style={{ width: 'auto', minWidth: 155, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
         >
           <option value="">All Assignees</option>
           {assignees.map((a) => (
@@ -199,7 +227,7 @@ export default function BoardPage() {
           className="form-select"
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          style={{ width: 'auto', minWidth: 120, height: 32, fontSize: '0.8rem' }}
+          style={{ width: 'auto', minWidth: 135, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
         >
           <option value="">All Priorities</option>
           {['lowest', 'low', 'medium', 'high', 'highest'].map((p) => (
@@ -211,13 +239,33 @@ export default function BoardPage() {
           className="form-select"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          style={{ width: 'auto', minWidth: 110, height: 32, fontSize: '0.8rem' }}
+          style={{ width: 'auto', minWidth: 115, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
         >
           <option value="">All Types</option>
           {['task', 'bug', 'story', 'epic'].map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
+
+        {/* Due Date Range Filters */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)', borderLeft: '1px solid var(--border-color)', paddingLeft: 10 }}>
+          <Calendar size={14} />
+          <span>Due From:</span>
+          <DateFilterInput
+            value={filterDueDateFrom}
+            onChange={(e) => setFilterDueDateFrom(e.target.value)}
+            placeholder="--/--/----"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <span>To:</span>
+          <DateFilterInput
+            value={filterDueDateTo}
+            onChange={(e) => setFilterDueDateTo(e.target.value)}
+            placeholder="--/--/----"
+          />
+        </div>
 
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -230,7 +278,7 @@ export default function BoardPage() {
       <div style={{ flex: 1, minHeight: 0 }}>
         <KanbanBoard
           columns={columns}
-          issues={issues}
+          issues={filteredIssues}
           onIssueMove={handleIssueMove}
           onIssueClick={handleIssueClick}
         />
