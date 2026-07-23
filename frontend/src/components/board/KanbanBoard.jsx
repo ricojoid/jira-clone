@@ -199,9 +199,10 @@ export default function KanbanBoard({
     >
       <div
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           gap: 16,
-          overflowX: 'auto',
+          minWidth: '100%',
+          width: 'max-content',
           minHeight: 'calc(100vh - 180px)',
           alignItems: 'flex-start',
           paddingBottom: 16,

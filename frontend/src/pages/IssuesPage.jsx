@@ -59,10 +59,6 @@ export default function IssuesPage() {
   }, [fetchData]);
 
   const handleOpenCreate = () => {
-    if (!isPM) {
-      toast.error('Only Project Managers can create issues');
-      return;
-    }
     setCreateOpen(true);
   };
 
@@ -150,7 +146,7 @@ export default function IssuesPage() {
           >
             Export Excel
           </Button>
-          <Button variant="primary" icon={Plus} onClick={handleOpenCreate} disabled={!isPM}>
+          <Button variant="primary" icon={Plus} onClick={handleOpenCreate}>
             Create Issue
           </Button>
         </div>

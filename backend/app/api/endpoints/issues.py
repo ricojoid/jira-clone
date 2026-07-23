@@ -114,14 +114,6 @@ def create_issue(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Check if user has PM role
-    user_role = getattr(current_user, 'role', 'pm') or 'pm'
-    if user_role.lower() not in ["pm", "project_manager", "admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Hanya user dengan role PM yang dapat membuat issue",
-        )
-
     issue_key = _generate_issue_key(db, issue_data.project_id)
 
     # Get max position

@@ -177,7 +177,7 @@ export default function BacklogPage() {
           <Button variant="secondary" icon={Plus} onClick={handleCreateSprint} disabled={!isPM}>
             Create Sprint
           </Button>
-          <Button variant="primary" icon={Plus} onClick={() => setCreateOpen(true)} disabled={!isPM}>
+          <Button variant="primary" icon={Plus} onClick={() => setCreateOpen(true)}>
             Create Issue
           </Button>
         </div>

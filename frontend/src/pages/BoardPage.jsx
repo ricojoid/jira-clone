@@ -139,10 +139,6 @@ export default function BoardPage() {
   };
 
   const handleAddIssue = () => {
-    if (!isPM) {
-      toast.error('Only Project Managers can create issues');
-      return;
-    }
     setCreateOpen(true);
   };
 
@@ -199,7 +195,7 @@ export default function BoardPage() {
           >
             Export Excel
           </Button>
-          <Button variant="primary" icon={Plus} onClick={handleAddIssue} disabled={!isPM}>
+          <Button variant="primary" icon={Plus} onClick={handleAddIssue}>
             Create Issue
           </Button>
         </div>

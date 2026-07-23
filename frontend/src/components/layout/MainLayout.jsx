@@ -31,9 +31,9 @@ export default function MainLayout() {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)' }}>
       <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={handleToggleSidebar} />
 
-      <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
+      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
         <TopBar />
-        <div style={{ flexGrow: 1, overflowY: 'auto', padding: '24px 32px' }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '24px 32px' }}>
           <Outlet />
         </div>
       </main>
