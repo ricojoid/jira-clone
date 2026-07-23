@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_serializer
 from typing import Optional, List
 from datetime import datetime, timezone
 from app.schemas.user import UserBrief
+from app.schemas.board import SprintBrief
 
 
 # --- Label Schemas ---
@@ -98,6 +99,7 @@ class IssueBrief(BaseModel):
     assignee_id: Optional[int] = None
     due_date: Optional[datetime] = None
     assignee: Optional[UserBrief] = None
+    sprint: Optional[SprintBrief] = None
     labels: Optional[List[LabelResponse]] = []
 
     class Config:
@@ -119,6 +121,7 @@ class IssueResponse(IssueBase):
     updated_at: datetime
     assignee: Optional[UserBrief] = None
     reporter: Optional[UserBrief] = None
+    sprint: Optional[SprintBrief] = None
     labels: Optional[List[LabelResponse]] = []
     comments: Optional[List[CommentResponse]] = []
     children: Optional[List[IssueBrief]] = []

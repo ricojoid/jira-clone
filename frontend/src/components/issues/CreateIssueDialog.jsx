@@ -7,14 +7,14 @@ import Avatar from '../ui/Avatar';
 import { TYPE_META, PRIORITY_META, TypeIcon } from '../ui/Badge';
 
 const WATERFALL_DEFAULT_PHASES = [
-  { code: 'UR', name: 'User Requirement' },
-  { code: 'DR', name: 'Design Review' },
-  { code: 'PU', name: 'Production Update' },
-  { code: 'ST', name: 'System Testing' },
-  { code: 'UT', name: 'User Acceptance Testing (UAT)' },
-  { code: 'TR', name: 'Training' },
-  { code: 'IP', name: 'Implementation' },
-  { code: 'MA', name: 'Maintenance' },
+  { code: 'UR', name: 'UR' },
+  { code: 'DR', name: 'DR' },
+  { code: 'PU', name: 'PU' },
+  { code: 'ST', name: 'ST' },
+  { code: 'UT', name: 'UT' },
+  { code: 'TR', name: 'TR' },
+  { code: 'IP', name: 'IP' },
+  { code: 'MA', name: 'MA' },
 ];
 
 import { formatDateForDateInput } from '../../utils/deadline';

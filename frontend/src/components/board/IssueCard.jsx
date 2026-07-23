@@ -32,6 +32,11 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
     borderStyle = '1px solid rgba(245, 158, 11, 0.5)';
   }
 
+  const rawSprintName = issue.sprint?.name || issue.sprint_name || issue.phase_name || '';
+  const phaseCode = rawSprintName
+    ? (rawSprintName.includes(' - ') ? rawSprintName.split(' - ')[0].trim() : rawSprintName)
+    : null;
+
   return (
     <div
       ref={combinedRef}
@@ -55,9 +60,24 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
       {...attributes}
       {...listeners}
     >
-      {/* Labels & Deadline */}
-      {((issue.labels && issue.labels.length > 0) || dueDate) && (
+      {/* Badges: Phase, Deadline & Labels */}
+      {((issue.labels && issue.labels.length > 0) || dueDate || phaseCode) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8, alignItems: 'center' }}>
+          {phaseCode && (
+            <span
+              className="badge"
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                backgroundColor: '#fef3c7',
+                color: '#b45309',
+                border: '1px solid #fcd34d',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {phaseCode}
+            </span>
+          )}
           {dueDate && (
             <DeadlineBadge dueDate={dueDate} status={issue.status} compact />
           )}

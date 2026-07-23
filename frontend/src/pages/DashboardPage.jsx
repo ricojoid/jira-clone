@@ -118,16 +118,20 @@ export default function DashboardPage() {
     }
     try {
       setCreating(true);
-      await projectApi.create({
+      const res = await projectApi.create({
         name: form.name.trim(),
         key: form.key || generateKey(form.name),
         description: form.description.trim(),
         sdlc_type: form.sdlc_type || 'scrum',
       });
+      const newProj = res.data;
+      const newProjId = newProj.id || newProj._id;
+      setProjects((prev) => [newProj, ...prev]);
+      setIssuesMap((prev) => ({ ...prev, [newProjId]: [] }));
       toast.success('Project created successfully');
       setDialogOpen(false);
       setForm({ name: '', key: '', description: '', sdlc_type: 'scrum' });
-      fetchData();
+      await fetchData();
     } catch (err) {
       toast.error(err?.response?.data?.detail ?? 'Failed to create project');
     } finally {
@@ -307,48 +311,30 @@ export default function DashboardPage() {
                       }}
                     >
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                          <div
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                            {p.name}
+                          </span>
+                          <span
+                            className="badge"
                             style={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: 12,
-                              backgroundColor: '#dc2626',
-                              color: '#ffffff',
-                              fontWeight: 900,
-                              fontSize: 15,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: '0 4px 10px rgba(220, 38, 38, 0.2)',
+                              fontSize: '0.625rem',
+                              fontWeight: 800,
+                              backgroundColor: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fef3c7' : '#e0e7ff',
+                              color: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#b45309' : '#4338ca',
+                              border: `1px solid ${(p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fcd34d' : '#c7d2fe'}`,
+                              flexShrink: 0,
                             }}
                           >
-                            {p.name?.slice(0, 2).toUpperCase() ?? 'P'}
-                          </div>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {p.name}
-                              </span>
-                              <span
-                                className="badge"
-                                style={{
-                                  fontSize: '0.625rem',
-                                  fontWeight: 800,
-                                  backgroundColor: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fef3c7' : '#e0e7ff',
-                                  color: (p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#b45309' : '#4338ca',
-                                  border: `1px solid ${(p.sdlc_type || '').toLowerCase() === 'waterfall' ? '#fcd34d' : '#c7d2fe'}`,
-                                }}
-                              >
-                                {(p.sdlc_type || 'scrum').toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
+                            {(p.sdlc_type || 'scrum').toUpperCase()}
+                          </span>
                         </div>
 
-                        <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {p.description || 'No description provided.'}
-                        </p>
+                        {p.description && (
+                          <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {p.description}
+                          </p>
+                        )}
                       </div>
 
                       <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>

@@ -39,6 +39,14 @@ class BoardResponse(BoardBase):
         from_attributes = True
 
 
+class SprintBrief(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 # --- Sprint Schemas ---
 class SprintBase(BaseModel):
     name: str

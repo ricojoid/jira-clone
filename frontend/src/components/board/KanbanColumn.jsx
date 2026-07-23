@@ -32,7 +32,8 @@ function getColKey(col) {
 
 export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue }) {
   const columnId = getColKey(column);
-  const columnName = column.name || column.title;
+  const rawName = column.name || column.title || '';
+  const columnName = rawName.includes(' - ') ? rawName.split(' - ')[0].trim() : rawName;
   const accent = COLUMN_ACCENTS[columnName] || { border: 'var(--primary)', badgeBg: 'var(--primary-light)', badgeText: 'var(--primary)' };
 
   const { setNodeRef, isOver } = useDroppable({

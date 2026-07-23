@@ -113,8 +113,8 @@ export default function SprintsPage() {
       for (const phase of WATERFALL_PHASES) {
         await sprintApi.create({
           project_id: projectId,
-          name: `${phase.code} - ${phase.name}`,
-          goal: `Objectives and deliverables for ${phase.name} phase.`,
+          name: phase.code,
+          goal: `Objectives and deliverables for ${phase.code} phase.`,
         });
       }
       toast.success('Successfully initialized all 8 Waterfall SDLC phases!');
@@ -135,7 +135,7 @@ export default function SprintsPage() {
     setEditingSprint(null);
     setSprintForm({
       ...initialSprintForm,
-      name: prefillName || (isWaterfall ? 'UR - User Requirement' : `Sprint ${sprints.length + 1}`),
+      name: prefillName || (isWaterfall ? 'UR' : `Sprint ${sprints.length + 1}`),
     });
     setDialogOpen(true);
   };
@@ -269,11 +269,11 @@ export default function SprintsPage() {
               {isWaterfall ? 'WATERFALL SDLC' : 'AGILE SCRUM'}
             </span>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
-            {isWaterfall
-              ? 'Manage target dates and goals for Waterfall phases (UR, DR, PU, ST, UT, TR, IP, MA)'
-              : `${sprints.length} total sprints planned and active`}
-          </div>
+          {!isWaterfall && (
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
+              {sprints.length} total sprints planned and active
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
@@ -299,7 +299,7 @@ export default function SprintsPage() {
           </h4>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 16 }}>
             {isWaterfall
-              ? 'Click below to automatically create all 8 Waterfall phases (UR, DR, PU, ST, UT, TR, IP, MA).'
+              ? 'Click below to initialize standard Waterfall phases.'
               : isPM ? 'Create your first sprint to organize work iterations.' : 'No sprints have been created for this project.'}
           </p>
           {isPM && (
@@ -321,13 +321,15 @@ export default function SprintsPage() {
           {sprints.map((sprint) => {
             const sprintId = sprint.id || sprint._id;
             const progress = getSprintProgress(sprintId);
+            const rawName = sprint.name || '';
+            const sprintDisplayName = rawName.includes(' - ') ? rawName.split(' - ')[0].trim() : rawName;
 
             return (
               <div key={sprintId} className="card card-hover" style={{ padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{sprint.name}</h3>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{sprintDisplayName}</h3>
                       <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'capitalize' }}>
                         {sprint.status || 'planned'}
                       </span>
@@ -405,7 +407,7 @@ export default function SprintsPage() {
           <input
             className="form-input"
             type="text"
-            placeholder={isWaterfall ? 'e.g. UR - User Requirement' : 'Sprint 1'}
+            placeholder={isWaterfall ? 'e.g. UR' : 'Sprint 1'}
             value={sprintForm.name}
             onChange={(e) => setSprintForm((p) => ({ ...p, name: e.target.value }))}
             autoFocus

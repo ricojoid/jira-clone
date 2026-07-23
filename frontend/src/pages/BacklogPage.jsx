@@ -183,85 +183,113 @@ export default function BacklogPage() {
         </div>
       </div>
 
-      {/* Sprints Sections */}
-      {sprints.map((sprint) => {
-        const sprintId = sprint.id || sprint._id;
-        const isExpanded = expandedSprints[sprintId] !== false;
-        return (
-          <div
-            key={sprintId}
-            className="card"
-            onDragOver={handleDragOver}
-            onDrop={() => handleDropOnSprint(sprintId)}
-            style={{ padding: 0, overflow: 'hidden' }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                backgroundColor: 'var(--bg-hover)',
-                borderBottom: isExpanded ? '1px solid var(--border-color)' : 'none',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => toggleSprint(sprintId)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)' }}
-                >
-                  {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                </button>
-                <span style={{ fontWeight: 800, fontSize: '1rem' }}>{sprint.name}</span>
-                <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'capitalize' }}>
-                  {sprint.status || 'planned'}
-                </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  ({sprint.issues?.length || 0} issues)
-                </span>
-              </div>
-
-              {sprint.status === 'planned' && sprint.issues?.length > 0 && (
-                <Button variant="primary" size="sm" icon={Play} onClick={() => handleStartSprint(sprint)}>
-                  Start Sprint
-                </Button>
-              )}
+      {/* 2-Column Grid 50-50 Split: Left = Phases/Sprints, Right = Backlog Panel */}
+      <div className="grid-responsive-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'flex-start' }}>
+        {/* Left Column: Sprints / Phases */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {sprints.length === 0 ? (
+            <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--text-muted)' }}>
+              No sprints or phases configured for this project yet.
             </div>
+          ) : (
+            sprints.map((sprint) => {
+              const sprintId = sprint.id || sprint._id;
+              const isExpanded = expandedSprints[sprintId] !== false;
+              const rawName = sprint.name || '';
+              const sprintDisplayName = rawName.includes(' - ') ? rawName.split(' - ')[0].trim() : rawName;
 
-            {isExpanded && (
-              <div>
-                {sprint.issues?.length === 0 ? (
-                  <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    Drag issues here to include in sprint
+              return (
+                <div
+                  key={sprintId}
+                  className="card"
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDropOnSprint(sprintId)}
+                  style={{ padding: 0, overflow: 'hidden' }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      backgroundColor: 'var(--bg-hover)',
+                      borderBottom: isExpanded ? '1px solid var(--border-color)' : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleSprint(sprintId)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-main)' }}
+                      >
+                        {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                      </button>
+                      <span style={{ fontWeight: 800, fontSize: '1rem' }}>{sprintDisplayName}</span>
+                      <span className="badge" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', textTransform: 'capitalize' }}>
+                        {sprint.status || 'planned'}
+                      </span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        ({sprint.issues?.length || 0} issues)
+                      </span>
+                    </div>
+
+                    {sprint.status === 'planned' && sprint.issues?.length > 0 && (
+                      <Button variant="primary" size="sm" icon={Play} onClick={() => handleStartSprint(sprint)}>
+                        Start
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  sprint.issues.map(renderIssueRow)
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
 
-      {/* Backlog Section */}
-      <div
-        className="card"
-        onDragOver={handleDragOver}
-        onDrop={handleDropOnBacklog}
-        style={{ padding: 0, overflow: 'hidden' }}
-      >
+                  {isExpanded && (
+                    <div>
+                      {sprint.issues?.length === 0 ? (
+                        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          Drag issues here to include in this phase
+                        </div>
+                      ) : (
+                        sprint.issues.map(renderIssueRow)
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Right Column: Backlog Tasks Panel */}
         <div
+          className="card"
+          onDragOver={handleDragOver}
+          onDrop={handleDropOnBacklog}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px 16px',
-            backgroundColor: 'var(--bg-hover)',
-            borderBottom: backlogExpanded ? '1px solid var(--border-color)' : 'none',
+            padding: 0,
+            overflow: 'hidden',
+            position: 'sticky',
+            top: 24,
+            backgroundColor: '#ffffff',
+            border: '2px dashed var(--primary-border)',
+            boxShadow: 'var(--shadow-md)',
+            marginTop: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              backgroundColor: '#fef2f2',
+              borderBottom: '1px solid var(--border-color)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Inbox size={18} color="#dc2626" />
+              <span style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--text-main)' }}>Backlog Tasks</span>
+              <span className="badge" style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.7rem' }}>
+                {backlogIssues.length}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setBacklogExpanded(!backlogExpanded)}
@@ -269,25 +297,24 @@ export default function BacklogPage() {
             >
               {backlogExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
             </button>
-            <span style={{ fontWeight: 800, fontSize: '1rem' }}>Backlog</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              ({backlogIssues.length} issues)
-            </span>
           </div>
-        </div>
 
-        {backlogExpanded && (
-          <div>
-            {backlogIssues.length === 0 ? (
-              <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
-                <Inbox size={36} style={{ color: 'var(--text-light)', marginBottom: 8 }} />
-                <div style={{ fontSize: '0.85rem' }}>No issues in backlog</div>
-              </div>
-            ) : (
-              backlogIssues.map(renderIssueRow)
-            )}
-          </div>
-        )}
+          {backlogExpanded && (
+            <div style={{ maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' }}>
+              {backlogIssues.length === 0 ? (
+                <div style={{ padding: 36, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <Inbox size={36} style={{ color: 'var(--text-light)', marginBottom: 8 }} />
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>No issues in backlog</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: 4 }}>
+                    Drag tasks here to send them back to backlog
+                  </div>
+                </div>
+              ) : (
+                backlogIssues.map(renderIssueRow)
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <CreateIssueDialog
