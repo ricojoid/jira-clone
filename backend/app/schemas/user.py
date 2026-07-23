@@ -68,6 +68,7 @@ class Token(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    identifier: Optional[str] = None
     email: Optional[str] = None
     username: Optional[str] = None
     password: str

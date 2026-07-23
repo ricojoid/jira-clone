@@ -252,11 +252,13 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
           <label className="form-label">Assignee</label>
           <select className="form-select" value={form.assignee_id} onChange={handleChange('assignee_id')}>
             <option value="">Unassigned</option>
-            {users.map((u) => (
-              <option key={u.id || u._id} value={u.id || u._id}>
-                {u.full_name || u.username || u.name || u.email}
-              </option>
-            ))}
+            {users
+              .filter((u) => !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase()))
+              .map((u) => (
+                <option key={u.id || u._id} value={u.id || u._id}>
+                  {u.full_name || u.username || u.name || u.email}
+                </option>
+              ))}
           </select>
         </div>
 

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
+import NotificationBell from './NotificationBell';
 
 function buildBreadcrumbs(pathname) {
   const segments = pathname.split('/').filter(Boolean);
@@ -90,9 +91,8 @@ export default function TopBar() {
       </nav>
 
       {/* Actions & Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <NotificationBell />
 
         {/* User Menu Dropdown */}
         <div style={{ position: 'relative' }} ref={menuRef}>

@@ -224,11 +224,13 @@ export default function BoardPage() {
           style={{ width: 'auto', minWidth: 155, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
         >
           <option value="">All Assignees</option>
-          {assignees.map((a) => (
-            <option key={a.id || a._id} value={a.id || a._id}>
-              {a.full_name || a.username}
-            </option>
-          ))}
+          {assignees
+            .filter((a) => !['super_admin', 'super admin', 'superadmin', 'admin'].includes((a.role || '').toLowerCase()))
+            .map((a) => (
+              <option key={a.id || a._id} value={a.id || a._id}>
+                {a.full_name || a.username}
+              </option>
+            ))}
         </select>
 
         <select

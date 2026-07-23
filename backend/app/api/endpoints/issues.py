@@ -108,6 +108,63 @@ def get_issue(
     return issue
 
 
+import re
+from app.models.notification import Notification
+
+def _notify_task_assigned(db: Session, issue: Issue, sender: User):
+    if issue.assignee_id and issue.assignee_id != sender.id:
+        sender_name = sender.full_name or sender.username
+        notif = Notification(
+            user_id=issue.assignee_id,
+            sender_id=sender.id,
+            issue_id=issue.id,
+            type="task_assigned",
+            title="Task Assigned to You",
+            message=f"{sender_name} assigned task '{issue.issue_key}: {issue.title}' to you",
+        )
+        db.add(notif)
+
+
+def _notify_comment_mentions(db: Session, comment_content: str, issue: Issue, author: User):
+    matches = re.findall(r'@\[([^\]]+)\]|@"([^"]+)"|@([a-zA-Z0-9_\.\-]+)', comment_content)
+    mentioned_names = set()
+    for m in matches:
+        name = m[0] or m[1] or m[2]
+        if name:
+            mentioned_names.add(name.strip().lower())
+
+    if not mentioned_names:
+        return
+
+    all_users = db.query(User).filter(User.is_active == True).all()
+    target_users = set()
+    for u in all_users:
+        if u.id == author.id:
+            continue
+        uname = (u.username or '').lower()
+        fname = (u.full_name or '').lower()
+        email = (u.email or '').lower()
+
+        for m_name in mentioned_names:
+            if m_name == uname or m_name == fname or m_name == email or m_name in fname:
+                target_users.add(u)
+                break
+
+    author_name = author.full_name or author.username
+    snippet = comment_content[:60] + ('...' if len(comment_content) > 60 else '')
+
+    for t_user in target_users:
+        notif = Notification(
+            user_id=t_user.id,
+            sender_id=author.id,
+            issue_id=issue.id,
+            type="comment_mention",
+            title="You were mentioned in a comment",
+            message=f'{author_name} mentioned you in "{issue.issue_key}": "{snippet}"',
+        )
+        db.add(notif)
+
+
 @router.post("", response_model=IssueResponse, status_code=status.HTTP_201_CREATED)
 def create_issue(
     issue_data: IssueCreate,
@@ -141,6 +198,11 @@ def create_issue(
 
     db.add(issue)
     db.commit()
+    db.refresh(issue)
+
+    _notify_task_assigned(db, issue, current_user)
+    db.commit()
+
     return get_issue(issue.id, current_user, db)
 
 
@@ -176,11 +238,18 @@ def update_issue(
         labels = db.query(Label).filter(Label.id.in_(label_ids)).all()
         issue.labels = labels
 
+    old_assignee_id = issue.assignee_id
+
     for field, value in update_data.items():
         setattr(issue, field, value)
 
     db.commit()
     db.refresh(issue)
+
+    if issue.assignee_id and issue.assignee_id != old_assignee_id:
+        _notify_task_assigned(db, issue, current_user)
+        db.commit()
+
     return issue
 
 
@@ -270,6 +339,10 @@ def add_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
+
+    _notify_comment_mentions(db, comment_data.content, issue, current_user)
+    db.commit()
+
     return comment
 
 

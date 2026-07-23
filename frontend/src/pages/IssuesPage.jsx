@@ -188,14 +188,19 @@ export default function IssuesPage() {
 
         <select className="form-select" style={{ width: 'auto', minWidth: 155, height: 36, padding: '0 30px 0 10px', fontSize: '0.8rem' }} value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
           <option value="">All Assignees</option>
-          {members.map((m) => {
-            const u = m.user || m;
-            return (
-              <option key={u.id || u._id} value={u.id || u._id}>
-                {u.full_name || u.username || u.name}
-              </option>
-            );
-          })}
+          {members
+            .filter((m) => {
+              const u = m.user || m;
+              return !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase());
+            })
+            .map((m) => {
+              const u = m.user || m;
+              return (
+                <option key={u.id || u._id} value={u.id || u._id}>
+                  {u.full_name || u.username || u.name}
+                </option>
+              );
+            })}
         </select>
 
         {/* Due Date Range Filters */}

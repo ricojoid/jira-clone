@@ -101,4 +101,12 @@ export const adminApi = {
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
 };
 
+// --- Notifications ---
+export const notificationApi = {
+  list: (limit = 50) => api.get('/notifications', { params: { limit } }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+};
+
 export default api;

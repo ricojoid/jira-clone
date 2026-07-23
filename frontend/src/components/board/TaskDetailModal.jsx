@@ -9,6 +9,8 @@ import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 import { TYPE_META, PRIORITY_META, STATUS_META, TypeIcon, StatusBadge, PriorityBadge, DeadlineBadge } from '../ui/Badge';
 import CreateIssueDialog from '../issues/CreateIssueDialog';
+import CommentInputWithMention from '../issues/CommentInputWithMention';
+import FormattedText from '../ui/FormattedText';
 import { formatDateForDateInput } from '../../utils/deadline';
 
 export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
@@ -129,11 +131,12 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
     }
   };
 
-  const handleAddComment = async () => {
-    if (!commentText.trim()) return;
+  const handleAddComment = async (textToSubmit) => {
+    const text = typeof textToSubmit === 'string' ? textToSubmit : commentText;
+    if (!text.trim()) return;
     try {
       setSubmittingComment(true);
-      const res = await issueApi.addComment(issueId, { content: commentText.trim() });
+      const res = await issueApi.addComment(issueId, { content: text.trim() });
       setComments((prev) => [...prev, res.data]);
       setCommentText('');
       toast.success('Comment added');
@@ -368,7 +371,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                         </span>
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-body)', whiteSpace: 'pre-wrap', paddingLeft: 34 }}>
-                        {c.content}
+                        <FormattedText text={c.content} />
                       </div>
                     </div>
                   ))}
@@ -379,24 +382,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
               <div style={{ display: 'flex', gap: 12 }}>
                 <Avatar name={user?.full_name || user?.username || user?.name} size={32} />
                 <div style={{ flex: 1 }}>
-                  <textarea
-                    className="form-textarea"
-                    rows={2}
-                    placeholder="Add a comment..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={Send}
-                      onClick={handleAddComment}
-                      disabled={!commentText.trim() || submittingComment}
-                    >
-                      Comment
-                    </Button>
-                  </div>
+                  <CommentInputWithMention onSubmit={handleAddComment} submitting={submittingComment} />
                 </div>
               </div>
             </div>
@@ -424,11 +410,13 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 <label className="form-label">Assignee</label>
                 <select className="form-select" value={issue.assignee_id || ''} onChange={(e) => updateField('assignee_id', e.target.value || null)}>
                   <option value="">Unassigned</option>
-                  {users.map((u) => (
-                    <option key={u.id || u._id} value={u.id || u._id}>
-                      {u.full_name || u.username || u.name || u.email}
-                    </option>
-                  ))}
+                  {users
+                    .filter((u) => !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase()))
+                    .map((u) => (
+                      <option key={u.id || u._id} value={u.id || u._id}>
+                        {u.full_name || u.username || u.name || u.email}
+                      </option>
+                    ))}
                 </select>
               </div>
 

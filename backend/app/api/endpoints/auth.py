@@ -42,7 +42,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
-    identifier = (login_data.email or login_data.username or "").strip()
+    identifier = (login_data.identifier or login_data.email or login_data.username or "").strip()
     if not identifier:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
