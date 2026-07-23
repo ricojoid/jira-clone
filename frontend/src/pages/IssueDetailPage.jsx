@@ -514,7 +514,9 @@ export default function IssueDetailPage() {
               <input
                 className="form-input"
                 type="date"
+                style={{ cursor: 'pointer' }}
                 value={formatDateForDateInput(issue.due_date)}
+                onClick={(e) => { try { e.target.showPicker(); } catch {} }}
                 onChange={(e) => updateField('due_date', e.target.value ? new Date(e.target.value).toISOString() : null)}
               />
             </div>

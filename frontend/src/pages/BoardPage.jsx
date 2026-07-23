@@ -180,11 +180,6 @@ export default function BoardPage() {
               {(project?.sdlc_type || 'scrum').toUpperCase()}
             </span>
           </div>
-          {isWaterfall && (
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
-              Waterfall Phase Board (UR ➔ DR ➔ PU ➔ ST ➔ UT ➔ TR ➔ IP ➔ MA)
-            </div>
-          )}
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>

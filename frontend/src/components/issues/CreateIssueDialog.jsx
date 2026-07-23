@@ -281,7 +281,9 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
           <input
             className="form-input"
             type="date"
+            style={{ cursor: 'pointer' }}
             value={form.due_date}
+            onClick={(e) => { try { e.target.showPicker(); } catch {} }}
             onChange={handleChange('due_date')}
           />
         </div>

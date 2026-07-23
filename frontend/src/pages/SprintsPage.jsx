@@ -431,7 +431,9 @@ export default function SprintsPage() {
             <input
               className="form-input"
               type="date"
+              style={{ cursor: 'pointer' }}
               value={sprintForm.start_date}
+              onClick={(e) => { try { e.target.showPicker(); } catch {} }}
               onChange={(e) => setSprintForm((p) => ({ ...p, start_date: e.target.value }))}
             />
           </div>
@@ -441,7 +443,9 @@ export default function SprintsPage() {
             <input
               className="form-input"
               type="date"
+              style={{ cursor: 'pointer' }}
               value={sprintForm.end_date}
+              onClick={(e) => { try { e.target.showPicker(); } catch {} }}
               onChange={(e) => setSprintForm((p) => ({ ...p, end_date: e.target.value }))}
             />
           </div>
