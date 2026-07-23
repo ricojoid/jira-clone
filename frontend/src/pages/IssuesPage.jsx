@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Plus, Inbox, Filter, Calendar } from 'lucide-react';
+import { Search, Plus, Inbox, Filter, Calendar, FileSpreadsheet } from 'lucide-react';
 import { projectApi, issueApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import Avatar from '../components/ui/Avatar';
 import { StatusBadge, PriorityBadge, TypeIcon, STATUS_META, PRIORITY_META, TYPE_META, DeadlineBadge } from '../components/ui/Badge';
 
 import DateFilterInput from '../components/ui/DateFilterInput';
+import { exportBoardToExcel } from '../utils/excelExport';
 
 export default function IssuesPage() {
   const { projectId } = useParams();
@@ -141,9 +142,18 @@ export default function IssuesPage() {
           )}
         </div>
 
-        <Button variant="primary" icon={Plus} onClick={handleOpenCreate} disabled={!isPM}>
-          Create Issue
-        </Button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button
+            variant="secondary"
+            icon={FileSpreadsheet}
+            onClick={() => exportBoardToExcel(filtered, project?.name || 'Issues')}
+          >
+            Export Excel
+          </Button>
+          <Button variant="primary" icon={Plus} onClick={handleOpenCreate} disabled={!isPM}>
+            Create Issue
+          </Button>
+        </div>
       </div>
 
       {/* Filter Bar */}

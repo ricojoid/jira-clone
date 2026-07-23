@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Filter, Calendar } from 'lucide-react';
+import { Plus, Filter, Calendar, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { boardApi, issueApi, userApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ import CreateIssueDialog from '../components/issues/CreateIssueDialog';
 import Button from '../components/ui/Button';
 
 import DateFilterInput from '../components/ui/DateFilterInput';
+import { exportBoardToExcel } from '../utils/excelExport';
 
 const DEFAULT_COLUMNS = [
   { id: 'todo', name: 'To Do', status: 'todo', color: '#94a3b8' },
@@ -188,9 +189,18 @@ export default function BoardPage() {
           </div>
         </div>
 
-        <Button variant="primary" icon={Plus} onClick={handleAddIssue} disabled={!isPM}>
-          Create Issue
-        </Button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button
+            variant="secondary"
+            icon={FileSpreadsheet}
+            onClick={() => exportBoardToExcel(filteredIssues, project?.name || 'Board')}
+          >
+            Export Excel
+          </Button>
+          <Button variant="primary" icon={Plus} onClick={handleAddIssue} disabled={!isPM}>
+            Create Issue
+          </Button>
+        </div>
       </div>
 
       {/* Filter Bar */}
