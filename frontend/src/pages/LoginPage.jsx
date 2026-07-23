@@ -32,10 +32,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await login(formData.identifier.trim(), formData.password);
+      const userRes = await login(formData.identifier.trim(), formData.password);
       toast.success('Berhasil masuk!');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
+      console.error('Login error:', err);
       toast.error(
         err?.response?.data?.detail ||
           err?.response?.data?.message ||

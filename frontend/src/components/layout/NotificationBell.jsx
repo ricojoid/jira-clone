@@ -86,7 +86,13 @@ export default function NotificationBell() {
 
   const formatTimeAgo = (dateStr) => {
     if (!dateStr) return '';
-    const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+    let str = String(dateStr);
+    if (!str.endsWith('Z') && !str.includes('+') && !str.includes('-')) {
+      str = str + 'Z';
+    }
+    const targetDate = new Date(str);
+    const now = new Date();
+    const diff = Math.max(0, Math.floor((now.getTime() - targetDate.getTime()) / 1000));
     if (diff < 60) return 'just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;

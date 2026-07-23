@@ -1,17 +1,42 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications
+from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications, upload
 from app.models.user import User
 from app.core.security import get_password_hash
 import app.models
 
-# Create all tables safely on startup
-try:
-    Base.metadata.create_all(bind=engine)
-except Exception as err:
-    print("Database table creation warning:", err)
+# Create uploads directory if not exists
+os.makedirs("uploads", exist_ok=True)
+
+app = FastAPI(
+    title="Jira Clone API",
+    description="Project Management Tool - Jira Clone",
+    version="1.0.0",
+)
+
+# Serve uploaded files statically
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+    ],
+    allow_origin_regex=r"https?://.*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 def _auto_migrate_and_seed():
     try:
@@ -19,24 +44,15 @@ def _auto_migrate_and_seed():
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
-        with engine.connect() as conn:
-            if 'users' in tables:
-                user_cols = [c['name'] for c in inspector.get_columns('users')]
-                if 'role' not in user_cols:
-                    conn.execute(text("ALTER TABLE users ADD role VARCHAR(50) DEFAULT 'pm'"))
-                    conn.commit()
-                conn.execute(text("UPDATE users SET role = 'pm' WHERE role IS NULL"))
-                conn.commit()
-
-            if 'projects' in tables:
-                proj_cols = [c['name'] for c in inspector.get_columns('projects')]
-                if 'sdlc_type' not in proj_cols:
-                    conn.execute(text("ALTER TABLE projects ADD sdlc_type VARCHAR(20) DEFAULT 'scrum'"))
-                    conn.commit()
-
-            if 'project_members' in tables:
-                conn.execute(text("UPDATE project_members SET role = 'member' WHERE role IS NULL"))
-                conn.commit()
+        if "comments" in tables:
+            columns = [c["name"] for c in inspector.get_columns("comments")]
+            if "attachment_url" not in columns:
+                with engine.begin() as conn:
+                    try:
+                        conn.execute(text("ALTER TABLE comments ADD attachment_url VARCHAR(500)"))
+                    except Exception:
+                        conn.execute(text("ALTER TABLE comments ADD COLUMN attachment_url VARCHAR(500)"))
+                print("Auto-migrated comments table: added attachment_url column")
     except Exception as e:
         print("Auto-migration warning:", e)
 
@@ -59,23 +75,15 @@ def _auto_migrate_and_seed():
     except Exception as e:
         print("Auto-seed warning:", e)
 
-_auto_migrate_and_seed()
 
-app = FastAPI(
-    title="Jira Clone API",
-    description="Project Management Tool - Jira Clone",
-    version="1.0.0",
-)
+@app.on_event("startup")
+def on_startup():
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as err:
+        print("Database table creation warning:", err)
+    _auto_migrate_and_seed()
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_origin_regex=".*",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Routes
 app.include_router(auth.router, prefix="/api")
@@ -86,6 +94,7 @@ app.include_router(issues.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(upload.router, prefix="/api")
 
 
 @app.get("/api/health")

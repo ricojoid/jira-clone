@@ -333,6 +333,7 @@ def add_comment(
 
     comment = Comment(
         content=comment_data.content,
+        attachment_url=comment_data.attachment_url,
         issue_id=issue_id,
         author_id=current_user.id,
     )

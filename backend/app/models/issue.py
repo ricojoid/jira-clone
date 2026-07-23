@@ -93,6 +93,7 @@ class Comment(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     content = Column(Text, nullable=False)
+    attachment_url = Column(String(500), nullable=True)
     issue_id = Column(Integer, ForeignKey("issues.id"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

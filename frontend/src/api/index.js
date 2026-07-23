@@ -109,4 +109,22 @@ export const notificationApi = {
   markAllAsRead: () => api.put('/notifications/read-all'),
 };
 
+// --- Upload ---
+export const uploadApi = {
+  uploadFile: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+export const getAttachmentUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return cleanPath;
+};
+
 export default api;

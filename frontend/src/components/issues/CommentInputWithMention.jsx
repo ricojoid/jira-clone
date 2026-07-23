@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, AtSign } from 'lucide-react';
-import { userApi } from '../../api';
+import { Send, AtSign, Paperclip, X, Image as ImageIcon, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { userApi, uploadApi } from '../../api';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 
 export default function CommentInputWithMention({
   onSubmit,
   submitting = false,
-  placeholder = 'Add a comment... (Type @ to mention team members)',
+  placeholder = 'Add a comment... (Type @ to mention, click 📎 to attach photo/file)',
 }) {
   const [content, setContent] = useState('');
   const [users, setUsers] = useState([]);
@@ -16,8 +17,13 @@ export default function CommentInputWithMention({
   const [mentionIndex, setMentionIndex] = useState(-1);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  // Attachment state
+  const [attachment, setAttachment] = useState(null); // { url, filename, isImage }
+  const [uploadingFile, setUploadingFile] = useState(false);
+
   const textareaRef = useRef(null);
   const popoverRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -44,13 +50,11 @@ export default function CommentInputWithMention({
     const cursorPos = e.target.selectionStart;
     setContent(val);
 
-    // Check if cursor is right after an '@' or typing a mention
     const textBeforeCursor = val.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
 
     if (lastAtIndex !== -1) {
       const queryText = textBeforeCursor.slice(lastAtIndex + 1);
-      // Ensure no spaces before cursor in the query
       if (!/\s/.test(queryText)) {
         setMentionOpen(true);
         setMentionQuery(queryText);
@@ -80,6 +84,35 @@ export default function CommentInputWithMention({
         textareaRef.current.setSelectionRange(nextPos, nextPos);
       }
     }, 50);
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File size cannot exceed 15MB');
+      return;
+    }
+
+    try {
+      setUploadingFile(true);
+      const res = await uploadApi.uploadFile(file);
+      const url = res.data.url;
+      const isImg = /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name);
+      setAttachment({
+        url,
+        filename: file.filename || file.name,
+        isImage: isImg,
+      });
+      toast.success('Attachment uploaded!');
+    } catch (err) {
+      console.error('Failed to upload file:', err);
+      toast.error(err.response?.data?.detail || 'Failed to upload attachment');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -112,9 +145,13 @@ export default function CommentInputWithMention({
   };
 
   const handleSubmit = () => {
-    if (!content.trim() || submitting) return;
-    onSubmit(content.trim());
+    if ((!content.trim() && !attachment) || submitting || uploadingFile) return;
+    onSubmit({
+      content: content.trim(),
+      attachment_url: attachment?.url || null,
+    });
     setContent('');
+    setAttachment(null);
     setMentionOpen(false);
   };
 
@@ -130,6 +167,44 @@ export default function CommentInputWithMention({
         onKeyDown={handleKeyDown}
         style={{ width: '100%', fontSize: '0.875rem' }}
       />
+
+      {/* Attachment Preview Box */}
+      {attachment && (
+        <div
+          style={{
+            marginTop: 8,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '6px 12px',
+            backgroundColor: 'var(--bg-hover)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 8,
+            maxWidth: '100%',
+          }}
+        >
+          {attachment.isImage ? (
+            <img
+              src={getAttachmentUrl(attachment.url)}
+              alt="Attachment Preview"
+              style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6 }}
+            />
+          ) : (
+            <FileText size={20} color="var(--primary)" />
+          )}
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+            {attachment.filename}
+          </span>
+          <button
+            type="button"
+            onClick={() => setAttachment(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2, display: 'flex', alignItems: 'center' }}
+            title="Remove attachment"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Mention Suggestion Popover */}
       {mentionOpen && filteredUsers.length > 0 && (
@@ -194,17 +269,54 @@ export default function CommentInputWithMention({
         </div>
       )}
 
-      {/* Submit Controls */}
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt"
+      />
+
+      {/* Submit & Action Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-          Tip: Type <strong style={{ color: 'var(--primary)' }}>@username</strong> to tag members (Ctrl+Enter to post)
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingFile}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              padding: '4px 8px',
+              borderRadius: 6,
+              transition: 'background-color 0.15s, color 0.15s',
+            }}
+            className="card-hover"
+            title="Attach photo or file"
+          >
+            <Paperclip size={16} color="var(--primary)" />
+            <span>{uploadingFile ? 'Uploading...' : 'Attach File'}</span>
+          </button>
+
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            Type <strong style={{ color: 'var(--primary)' }}>@username</strong> to tag
+          </span>
+        </div>
+
         <Button
           variant="primary"
           size="sm"
           icon={Send}
           onClick={handleSubmit}
-          disabled={!content.trim() || submitting}
+          disabled={(!content.trim() && !attachment) || submitting || uploadingFile}
         >
           {submitting ? 'Posting...' : 'Comment'}
         </Button>

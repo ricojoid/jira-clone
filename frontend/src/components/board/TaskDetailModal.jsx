@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Trash2, Edit2, Send, Plus, X } from 'lucide-react';
+import { ExternalLink, Trash2, Edit2, Send, Plus, X, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { issueApi, userApi, sprintApi } from '../../api';
+import { issueApi, userApi, sprintApi, getAttachmentUrl } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -22,6 +22,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [labels, setLabels] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
 
   // Editable fields
   const [editingTitle, setEditingTitle] = useState(false);
@@ -131,12 +132,22 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
     }
   };
 
-  const handleAddComment = async (textToSubmit) => {
-    const text = typeof textToSubmit === 'string' ? textToSubmit : commentText;
-    if (!text.trim()) return;
+  const handleAddComment = async (payloadData) => {
+    let content = '';
+    let attachment_url = null;
+
+    if (typeof payloadData === 'object' && payloadData !== null) {
+      content = payloadData.content || '';
+      attachment_url = payloadData.attachment_url || null;
+    } else {
+      content = String(payloadData || commentText).trim();
+    }
+
+    if (!content && !attachment_url) return;
+
     try {
       setSubmittingComment(true);
-      const res = await issueApi.addComment(issueId, { content: text.trim() });
+      const res = await issueApi.addComment(issueId, { content, attachment_url });
       setComments((prev) => [...prev, res.data]);
       setCommentText('');
       toast.success('Comment added');
@@ -167,12 +178,17 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    let str = String(dateStr);
+    if (!str.endsWith('Z') && !str.includes('+') && !str.includes('-')) {
+      str = str + 'Z';
+    }
+    return new Date(str).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
     });
   };
 
@@ -373,6 +389,54 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-body)', whiteSpace: 'pre-wrap', paddingLeft: 34 }}>
                         <FormattedText text={c.content} />
                       </div>
+                      {c.attachment_url && (
+                        <div style={{ marginTop: 8, paddingLeft: 34 }}>
+                          {/\.(png|jpe?g|webp|gif|svg)$/i.test(c.attachment_url) ? (
+                            <div style={{ marginTop: 4 }}>
+                              <img
+                                src={getAttachmentUrl(c.attachment_url)}
+                                alt="Attachment"
+                                onClick={() => setPreviewImage(getAttachmentUrl(c.attachment_url))}
+                                style={{
+                                  maxWidth: 280,
+                                  maxHeight: 200,
+                                  borderRadius: 8,
+                                  border: '1px solid var(--border-color)',
+                                  objectFit: 'cover',
+                                  cursor: 'pointer',
+                                  transition: 'transform 0.15s ease',
+                                }}
+                                className="card-hover"
+                                title="Click to view full image"
+                              />
+                            </div>
+                          ) : (
+                            <a
+                              href={getAttachmentUrl(c.attachment_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '6px 12px',
+                                backgroundColor: 'var(--bg-surface)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 8,
+                                color: 'var(--primary)',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                                marginTop: 4,
+                              }}
+                            >
+                              <FileText size={16} />
+                              <span>Open Attachment ({c.attachment_url.split('/').pop()})</span>
+                              <ExternalLink size={14} />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -514,6 +578,63 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
           if (onUpdated) onUpdated();
         }}
       />
+      {/* Lightbox Modal for Image Preview */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+            cursor: 'zoom-out',
+          }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <img
+              src={previewImage}
+              alt="Full Preview"
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '85vh',
+                objectFit: 'contain',
+                borderRadius: 8,
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+              <a
+                href={previewImage}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <ExternalLink size={16} /> Open original in new tab
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '6px 16px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }

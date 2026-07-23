@@ -25,6 +25,7 @@ class LabelResponse(LabelBase):
 # --- Comment Schemas ---
 class CommentBase(BaseModel):
     content: str
+    attachment_url: Optional[str] = None
 
 
 class CommentCreate(CommentBase):
