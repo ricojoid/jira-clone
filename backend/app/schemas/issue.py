@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.schemas.user import UserBrief
 
 
@@ -38,6 +38,14 @@ class CommentResponse(CommentBase):
     author: Optional[UserBrief] = None
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, dt: datetime, _info):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     class Config:
         from_attributes = True
@@ -115,6 +123,14 @@ class IssueResponse(IssueBase):
     comments: Optional[List[CommentResponse]] = []
     children: Optional[List[IssueBrief]] = []
     parent: Optional[IssueBrief] = None
+
+    @field_serializer("created_at", "updated_at", "due_date")
+    def serialize_issue_datetime(self, dt: datetime, _info):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     class Config:
         from_attributes = True
