@@ -405,3 +405,67 @@ html, body, #root {
   user-select: none;
   flex-shrink: 0;
 }
+
+/* Responsive Login Hero Panel */
+@media (max-width: 960px) {
+  .login-hero-panel {
+    display: none !important;
+  }
+}
+
+/* Login Hero Dynamic Animations */
+@keyframes spinGlobe {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinGlobeReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes floatReverse {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(12px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: 0.35; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes dashFlow {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+.animate-spin-globe {
+  animation: spinGlobe 35s linear infinite;
+  transform-origin: 250px 250px;
+}
+
+.animate-spin-globe-rev {
+  animation: spinGlobeReverse 50s linear infinite;
+  transform-origin: 250px 250px;
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.animate-float-rev {
+  animation: floatReverse 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.animate-dash-flow {
+  animation: dashFlow 2.5s linear infinite;
+}
