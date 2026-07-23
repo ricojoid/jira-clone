@@ -229,7 +229,7 @@ export default function IssueDetailPage() {
       </div>
 
       {/* 2-Column Content */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
+      <div className="grid-responsive-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
         {/* Main Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Header Title */}

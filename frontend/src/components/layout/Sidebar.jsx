@@ -18,7 +18,7 @@ import { projectApi } from '../../api';
 import Avatar from '../ui/Avatar';
 import toast from 'react-hot-toast';
 
-export default function Sidebar({ collapsed, onToggleCollapse }) {
+export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams();
@@ -62,11 +62,21 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
     fetchProjects();
   }, [projectId, selectedProject]);
 
+  const handleNavClick = (path) => {
+    let target = path;
+    if (['/board', '/backlog', '/sprints', '/issues'].includes(path) && selectedProject) {
+      target = `${path}/${selectedProject}`;
+    }
+    navigate(target);
+    if (onCloseMobile) onCloseMobile();
+  };
+
   const isActive = (path) => location.pathname.startsWith(path);
   const width = collapsed ? 72 : 260;
 
   return (
     <aside
+      className="sidebar-container"
       style={{
         width,
         minWidth: width,

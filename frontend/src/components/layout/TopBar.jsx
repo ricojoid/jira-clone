@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, LogOut, Settings } from 'lucide-react';
+import { ChevronRight, LogOut, Settings, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
 import NotificationBell from './NotificationBell';
@@ -19,7 +19,7 @@ function buildBreadcrumbs(pathname) {
   return crumbs;
 }
 
-export default function TopBar() {
+export default function TopBar({ onMobileMenuToggle }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -50,8 +50,6 @@ export default function TopBar() {
     navigate('/settings');
   };
 
-
-
   return (
     <header
       style={{
@@ -62,33 +60,54 @@ export default function TopBar() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 24px',
+        padding: '0 16px',
         position: 'sticky',
         top: 0,
         zIndex: 90,
       }}
     >
-      {/* Breadcrumbs */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
-        {breadcrumbs.map((crumb, idx) => {
-          const isLast = idx === breadcrumbs.length - 1;
-          return (
-            <span key={crumb.path} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {idx > 0 && <ChevronRight size={14} color="var(--text-light)" />}
-              {isLast ? (
-                <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{crumb.label}</span>
-              ) : (
-                <Link
-                  to={crumb.path}
-                  style={{ color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}
-                >
-                  {crumb.label}
-                </Link>
-              )}
-            </span>
-          );
-        })}
-      </nav>
+      {/* Left: Mobile Menu & Breadcrumbs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          type="button"
+          onClick={onMobileMenuToggle}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 6,
+            color: 'var(--text-main)',
+            display: 'flex',
+            alignItems: 'center',
+          }}
+          className="mobile-show"
+          title="Toggle Navigation Menu"
+        >
+          <Menu size={22} color="var(--primary)" />
+        </button>
+
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
+          {breadcrumbs.map((crumb, idx) => {
+            const isLast = idx === breadcrumbs.length - 1;
+            return (
+              <span key={crumb.path} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {idx > 0 && <ChevronRight size={14} color="var(--text-light)" />}
+                {isLast ? (
+                  <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{crumb.label}</span>
+                ) : (
+                  <Link
+                    to={crumb.path}
+                    className="mobile-hide"
+                    style={{ color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}
+                  >
+                    {crumb.label}
+                  </Link>
+                )}
+              </span>
+            );
+          })}
+        </nav>
+      </div>
 
       {/* Actions & Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

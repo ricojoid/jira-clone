@@ -198,6 +198,7 @@ export default function KanbanBoard({
       measuring={measuringConfig}
     >
       <div
+        className="kanban-board-scroll"
         style={{
           display: 'inline-flex',
           gap: 16,

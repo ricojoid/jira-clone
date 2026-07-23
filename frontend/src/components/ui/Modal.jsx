@@ -23,7 +23,7 @@ export default function Modal({ open, onClose, title, children, footer, maxWidth
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal-container"
+        className="modal-container modal-responsive"
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >

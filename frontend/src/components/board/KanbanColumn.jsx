@@ -44,7 +44,7 @@ export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue 
 
   return (
     <div
-      className="card"
+      className="card kanban-column"
       style={{
         width: 320,
         minWidth: 300,

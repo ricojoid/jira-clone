@@ -9,9 +9,14 @@ export default function MainLayout() {
   const location = useLocation();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleToggleSidebar = () => {
     setSidebarCollapsed((prev) => !prev);
+  };
+
+  const handleToggleMobileMenu = () => {
+    setMobileMenuOpen((prev) => !prev);
   };
 
   if (loading) {
@@ -29,11 +34,40 @@ export default function MainLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)' }}>
-      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={handleToggleSidebar} />
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 140,
+          }}
+          className="mobile-show"
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <div
+        className={mobileMenuOpen ? 'mobile-drawer-open' : ''}
+        style={{
+          zIndex: 150,
+        }}
+      >
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
+          onCloseMobile={() => setMobileMenuOpen(false)}
+        />
+      </div>
 
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
-        <TopBar />
-        <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '24px 32px' }}>
+        <TopBar onMobileMenuToggle={handleToggleMobileMenu} />
+        <div
+          style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '24px 32px' }}
+          className="app-container"
+        >
           <Outlet />
         </div>
       </main>

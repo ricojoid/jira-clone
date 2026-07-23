@@ -209,7 +209,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
           Issue not found
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
+        <div className="grid-responsive-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
           {/* Main Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Header / Title */}
