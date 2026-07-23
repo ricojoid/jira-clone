@@ -124,6 +124,12 @@ export const getAttachmentUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
+
+  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+    const origin = API_BASE_URL.replace(/\/api\/?$/, '');
+    return `${origin}${cleanPath}`;
+  }
+
   return cleanPath;
 };
 
