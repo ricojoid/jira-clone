@@ -103,26 +103,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 900,
-              fontSize: 16,
-              boxShadow: '0 4px 10px rgba(220, 38, 38, 0.3)',
-            }}
-          >
-            JC
-          </div>
           {!collapsed && (
             <div>
-              <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
+              <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
                 Jired
               </div>
             </div>
@@ -230,7 +213,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
           justifyContent: collapsed ? 'center' : 'flex-start',
         }}
       >
-        <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar} size={36} />
+        <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={36} />
         {!collapsed && (
           <div style={{ overflow: 'hidden', flex: 1 }}>
             <div

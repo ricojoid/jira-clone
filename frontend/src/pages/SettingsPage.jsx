@@ -1,18 +1,21 @@
-import { useState } from 'react';
-import { User, Lock, Save, Shield } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { User, Lock, Save, Shield, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { authApi } from '../api';
+import { authApi, userApi, getAttachmentUrl } from '../api';
 import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
 
 export default function SettingsPage() {
-  const { user, isSuperAdmin, isPM } = useAuth();
+  const { user, isSuperAdmin, isPM, updateUser } = useAuth();
   const [profile, setProfile] = useState({
     full_name: user?.full_name || '',
     avatar_url: user?.avatar_url || '',
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
+
   const [passwords, setPasswords] = useState({
     current_password: '',
     new_password: '',
@@ -20,10 +23,35 @@ export default function SettingsPage() {
   });
   const [changingPassword, setChangingPassword] = useState(false);
 
+  const handleAvatarFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const res = await userApi.uploadAvatar(file);
+      const updatedUser = res.data;
+      setProfile((prev) => ({ ...prev, avatar_url: updatedUser.avatar_url }));
+      if (updateUser) updateUser(updatedUser);
+      toast.success('Profile picture updated!');
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      toast.error(err.response?.data?.detail || 'Failed to upload profile picture');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleProfileSave = async () => {
     setSaving(true);
     try {
-      await authApi.updateMe({ full_name: profile.full_name, avatar_url: profile.avatar_url });
+      const res = await authApi.updateMe({ full_name: profile.full_name, avatar_url: profile.avatar_url });
+      if (updateUser && res.data) updateUser(res.data);
       toast.success('Profile updated successfully');
     } catch {
       toast.error('Failed to update profile');
@@ -57,6 +85,7 @@ export default function SettingsPage() {
   };
 
   const roleText = isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager (PM)' : 'Team Member';
+  const avatarUrl = profile.avatar_url || user?.avatar_url || user?.avatar;
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -77,20 +106,68 @@ export default function SettingsPage() {
         </h3>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--border-light)' }}>
-          <Avatar name={user?.full_name || user?.username} size={64} />
-          <div>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{user?.full_name || user?.username}</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>@{user?.username} &middot; {user?.email}</div>
-            <span
-              className="badge"
+          <div style={{ position: 'relative' }}>
+            <Avatar name={user?.full_name || user?.username} src={getAttachmentUrl(avatarUrl)} size={68} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
               style={{
-                backgroundColor: isSuperAdmin ? '#dc2626' : isPM ? 'var(--primary-light)' : 'var(--bg-subtle)',
-                color: isSuperAdmin ? '#ffffff' : isPM ? 'var(--primary)' : 'var(--text-muted)',
-                marginTop: 8,
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                border: '2px solid #ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                transition: 'transform 0.15s ease',
               }}
+              title="Change Profile Picture"
             >
-              Role: {roleText}
-            </span>
+              <Camera size={14} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleAvatarFileSelect}
+            />
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{user?.full_name || user?.username}</div>
+              {uploadingAvatar && <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 700 }}>Uploading...</span>}
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>@{user?.username} &middot; {user?.email}</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+              <span
+                className="badge"
+                style={{
+                  backgroundColor: isSuperAdmin ? '#dc2626' : isPM ? 'var(--primary-light)' : 'var(--bg-subtle)',
+                  color: isSuperAdmin ? '#ffffff' : isPM ? 'var(--primary)' : 'var(--text-muted)',
+                }}
+              >
+                Role: {roleText}
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                style={{ fontSize: '0.75rem', padding: '2px 8px', color: '#dc2626' }}
+              >
+                {uploadingAvatar ? 'Uploading Photo...' : 'Change Photo'}
+              </button>
+            </div>
           </div>
         </div>
 

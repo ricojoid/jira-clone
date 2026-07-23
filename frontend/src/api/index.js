@@ -89,6 +89,13 @@ export const issueApi = {
 // --- Users ---
 export const userApi = {
   list: () => api.get('/users'),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // --- Super Admin ---

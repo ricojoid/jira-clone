@@ -119,7 +119,7 @@ export default function TopBar({ onMobileMenuToggle }) {
             onClick={() => setMenuOpen(!menuOpen)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar} size={34} />
+            <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={34} />
           </button>
 
           {menuOpen && (

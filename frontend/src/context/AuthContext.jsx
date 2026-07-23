@@ -41,8 +41,12 @@ export function AuthProvider({ children }) {
   const isSuperAdmin = ['super_admin', 'admin', 'super admin', 'superadmin'].includes(roleLower);
   const isPM = isSuperAdmin || roleLower === 'pm' || roleLower === 'project_manager';
 
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isPM, isSuperAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isPM, isSuperAdmin, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

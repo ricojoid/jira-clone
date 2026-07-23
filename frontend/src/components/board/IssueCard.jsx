@@ -154,7 +154,7 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
         {issue.assignee && (
           <Avatar
             name={issue.assignee.full_name || issue.assignee.username || issue.assignee.name}
-            src={issue.assignee.avatar || issue.assignee.avatarUrl}
+            src={issue.assignee.avatar_url || issue.assignee.avatar || issue.assignee.avatarUrl}
             size={24}
           />
         )}
