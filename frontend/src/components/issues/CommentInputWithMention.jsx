@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, AtSign, Paperclip, X, Image as ImageIcon, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { userApi, uploadApi } from '../../api';
+import { userApi, uploadApi, getAttachmentUrl } from '../../api';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 
