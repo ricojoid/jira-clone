@@ -181,19 +181,13 @@ export default function DashboardPage() {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span className="badge" style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.7rem' }}>
-              ENTERPRISE DASHBOARD
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
               Welcome back, <strong>{user?.full_name || user?.username}</strong>
             </span>
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             Workspace Management Overview
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: 4 }}>
-            Track project deliverables, active agile sprints, and ongoing issue resolution.
-          </p>
         </div>
 
         {isPM && (

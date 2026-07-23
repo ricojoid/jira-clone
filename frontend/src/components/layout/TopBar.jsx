@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
-import { Search, Plus, ChevronRight, LogOut, Settings } from 'lucide-react';
-import CreateIssueDialog from '../issues/CreateIssueDialog';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { ChevronRight, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
-import Button from '../ui/Button';
-import toast from 'react-hot-toast';
 
 function buildBreadcrumbs(pathname) {
   const segments = pathname.split('/').filter(Boolean);
@@ -24,12 +21,9 @@ function buildBreadcrumbs(pathname) {
 export default function TopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { projectId } = useParams();
-  const { user, logout, isPM } = useAuth();
+  const { user, logout } = useAuth();
 
-  const [searchValue, setSearchValue] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
   const menuRef = useRef(null);
 
   const breadcrumbs = buildBreadcrumbs(location.pathname);
@@ -55,20 +49,7 @@ export default function TopBar() {
     navigate('/settings');
   };
 
-  const handleSearch = (e) => {
-    if (e.key === 'Enter' && searchValue.trim() && projectId) {
-      navigate(`/issues/${projectId}?search=${encodeURIComponent(searchValue.trim())}`);
-      setSearchValue('');
-    }
-  };
 
-  const handleCreateClick = () => {
-    if (!isPM) {
-      toast.error('Only Project Managers can create issues');
-      return;
-    }
-    setCreateOpen(true);
-  };
 
   return (
     <header
@@ -110,34 +91,8 @@ export default function TopBar() {
 
       {/* Actions & Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <Search
-            size={16}
-            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }}
-          />
-          <input
-            className="form-input"
-            type="text"
-            placeholder="Search issues..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            style={{ paddingLeft: 34, width: 200, height: 36, fontSize: '0.825rem' }}
-          />
-        </div>
 
-        {/* Create Issue */}
-        {projectId && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleCreateClick}
-            disabled={!isPM}
-            icon={Plus}
-          >
-            Create Issue
-          </Button>
-        )}
+
 
         {/* User Menu Dropdown */}
         <div style={{ position: 'relative' }} ref={menuRef}>
@@ -200,17 +155,6 @@ export default function TopBar() {
         </div>
       </div>
 
-      {projectId && (
-        <CreateIssueDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          projectId={projectId}
-          onCreated={() => {
-            setCreateOpen(false);
-            window.location.reload();
-          }}
-        />
-      )}
     </header>
   );
 }

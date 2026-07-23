@@ -115,9 +115,6 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
               <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.1 }}>
                 Jired
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 800 }}>
-                Enterprise Platform
-              </div>
             </div>
           )}
         </div>
@@ -155,7 +152,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
             {projects.length === 0 && <option value="">No projects</option>}
             {projects.map((p) => (
               <option key={p._id || p.id} value={p._id || p.id}>
-                {p.name} [{(p.sdlc_type || 'scrum').toUpperCase()}]
+                {p.name}
               </option>
             ))}
           </select>
