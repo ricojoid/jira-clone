@@ -378,7 +378,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} size={24} />
+                        <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} src={c.author?.avatar_url || c.author?.avatar} size={24} />
                         <span style={{ fontWeight: 700, fontSize: '0.825rem' }}>
                           {c.author?.full_name || c.author?.username || c.author?.name || 'User'}
                         </span>
@@ -444,7 +444,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
 
               {/* Add Comment */}
               <div style={{ display: 'flex', gap: 12 }}>
-                <Avatar name={user?.full_name || user?.username || user?.name} size={32} />
+                <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={32} />
                 <div style={{ flex: 1 }}>
                   <CommentInputWithMention onSubmit={handleAddComment} submitting={submittingComment} />
                 </div>

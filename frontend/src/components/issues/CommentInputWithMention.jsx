@@ -256,7 +256,7 @@ export default function CommentInputWithMention({
                   fontSize: '0.825rem',
                 }}
               >
-                <Avatar name={u.full_name || u.username || u.name} size={24} />
+                <Avatar name={u.full_name || u.username || u.name} src={u.avatar_url || u.avatar} size={24} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {u.full_name || u.name || u.username}

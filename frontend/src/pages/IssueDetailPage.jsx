@@ -375,7 +375,7 @@ export default function IssueDetailPage() {
                 {comments.map((c, idx) => (
                   <div key={c.id || idx} style={{ padding: 14, backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} size={26} />
+                      <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} src={c.author?.avatar_url || c.author?.avatar} size={26} />
                       <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>
                         {c.author?.full_name || c.author?.username || c.author?.name || 'User'}
                       </span>
@@ -440,7 +440,7 @@ export default function IssueDetailPage() {
             )}
 
             <div style={{ display: 'flex', gap: 12 }}>
-              <Avatar name={user?.full_name || user?.username || user?.name} size={34} />
+              <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={34} />
               <div style={{ flex: 1 }}>
                 <CommentInputWithMention onSubmit={handleAddComment} submitting={submittingComment} />
               </div>

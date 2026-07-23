@@ -239,7 +239,7 @@ export default function NotificationBell() {
                   >
                     <div style={{ marginTop: 2 }}>
                       {n.sender ? (
-                        <Avatar name={n.sender.full_name || n.sender.username} size={30} />
+                        <Avatar name={n.sender.full_name || n.sender.username} src={n.sender.avatar_url || n.sender.avatar} size={30} />
                       ) : n.type === 'comment_mention' ? (
                         <MessageSquare size={18} color="#6366f1" />
                       ) : (
