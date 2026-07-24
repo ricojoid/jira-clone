@@ -421,13 +421,13 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', tableLayout: 'fixed' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-app)', textAlign: 'left', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '10px 14px', fontWeight: 800 }}>Issue Title</th>
-                      <th style={{ padding: '10px 14px', fontWeight: 800 }}>Status</th>
-                      <th style={{ padding: '10px 14px', fontWeight: 800 }}>Priority</th>
-                      <th style={{ padding: '10px 14px', fontWeight: 800 }}>Created</th>
+                      <th style={{ padding: '10px 14px', fontWeight: 800, width: 130 }}>Status</th>
+                      <th style={{ padding: '10px 14px', fontWeight: 800, width: 110 }}>Priority</th>
+                      <th style={{ padding: '10px 14px', fontWeight: 800, width: 110 }}>Created</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -438,10 +438,12 @@ export default function DashboardPage() {
                         style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
                         className="card-hover"
                       >
-                        <td style={{ padding: '12px 14px', fontWeight: 600 }}>{issue.title}</td>
+                        <td style={{ padding: '12px 14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={issue.title}>
+                          {issue.title}
+                        </td>
                         <td style={{ padding: '12px 14px' }}><StatusBadge status={issue.status} /></td>
                         <td style={{ padding: '12px 14px' }}><PriorityBadge priority={issue.priority} /></td>
-                        <td style={{ padding: '12px 14px', color: 'var(--text-muted)' }}>{formatDate(issue.created_at)}</td>
+                        <td style={{ padding: '12px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(issue.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>

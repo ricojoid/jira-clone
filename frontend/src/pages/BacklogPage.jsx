@@ -79,19 +79,19 @@ export default function BacklogPage() {
 
   const handleCreateSprint = async () => {
     if (!isPM) {
-      toast.error('Only Project Managers can create sprints');
+      toast.error('Only Project Managers can create phases');
       return;
     }
     try {
       await sprintApi.create({
         project_id: projectId,
-        name: `Sprint ${sprints.length + 1}`,
+        name: `Phase ${sprints.length + 1}`,
       });
-      toast.success('Sprint created successfully');
+      toast.success('Phase created successfully');
       fetchData();
     } catch (err) {
-      console.error('Failed to create sprint:', err);
-      toast.error('Failed to create sprint');
+      console.error('Failed to create phase:', err);
+      toast.error('Failed to create phase');
     }
   };
 
@@ -186,12 +186,12 @@ export default function BacklogPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-          Backlog & Sprints
+          Backlog & Phases
         </h2>
 
         <div style={{ display: 'flex', gap: 10 }}>
           <Button variant="secondary" icon={Plus} onClick={handleCreateSprint} disabled={!isPM}>
-            Create Sprint
+            Create Phase
           </Button>
           <Button variant="primary" icon={Plus} onClick={() => setCreateOpen(true)}>
             Create Issue
