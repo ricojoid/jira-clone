@@ -344,14 +344,27 @@ export default function IssueDetailPage() {
                     className="card card-hover"
                     style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                   >
-                    <TypeIcon type={child.issue_type} size={16} />
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>
+                    <TypeIcon type={child.issue_type} size={16} style={{ flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)', flexShrink: 0 }}>
                       {child.issue_key}
                     </span>
-                    <span style={{ flex: 1, fontSize: '0.875rem', textDecoration: child.status === 'done' ? 'line-through' : 'none' }}>
+                    <span
+                      title={child.title}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontSize: '0.875rem',
+                        textDecoration: child.status === 'done' ? 'line-through' : 'none',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {child.title}
                     </span>
-                    <StatusBadge status={child.status} />
+                    <div style={{ flexShrink: 0 }}>
+                      <StatusBadge status={child.status} />
+                    </div>
                   </div>
                 ))}
               </div>

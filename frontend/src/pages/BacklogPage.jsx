@@ -142,21 +142,37 @@ export default function BacklogPage() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
-          padding: '10px 16px',
+          gap: 10,
+          padding: '10px 14px',
           borderBottom: '1px solid var(--border-light)',
           cursor: 'pointer',
           fontSize: '0.875rem',
+          minWidth: 0,
         }}
       >
-        <GripVertical size={16} color="var(--text-light)" style={{ cursor: 'grab' }} />
-        <TypeIcon type={issue.issue_type || issue.type} size={16} />
-        <span style={{ fontWeight: 700, color: 'var(--primary)', minWidth: 80 }}>{issue.issue_key}</span>
-        <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-main)' }}>{issue.title}</span>
-        {dueDate && <DeadlineBadge dueDate={dueDate} status={issue.status} compact />}
-        <StatusBadge status={issue.status} />
-        <PriorityBadge priority={issue.priority} />
-        <Avatar name={issue.assignee?.full_name || issue.assignee?.username || issue.assignee?.name} size={24} />
+        <GripVertical size={16} color="var(--text-light)" style={{ cursor: 'grab', flexShrink: 0 }} />
+        <TypeIcon type={issue.issue_type || issue.type} size={16} style={{ flexShrink: 0 }} />
+        <span style={{ fontWeight: 700, color: 'var(--primary)', minWidth: 70, flexShrink: 0 }}>{issue.issue_key}</span>
+        <span
+          title={issue.title}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontWeight: 600,
+            color: 'var(--text-main)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {issue.title}
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {dueDate && <DeadlineBadge dueDate={dueDate} status={issue.status} compact />}
+          <StatusBadge status={issue.status} />
+          <PriorityBadge priority={issue.priority} />
+          <Avatar name={issue.assignee?.full_name || issue.assignee?.username || issue.assignee?.name} size={24} />
+        </div>
       </div>
     );
   };
