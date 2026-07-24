@@ -199,10 +199,10 @@ export default function BacklogPage() {
         </div>
       </div>
 
-      {/* 2-Column Grid 50-50 Split: Left = Phases/Sprints, Right = Backlog Panel */}
-      <div className="grid-responsive-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'flex-start' }}>
+      {/* 2-Column Grid 50-50 Fixed Split: Left = Phases/Sprints, Right = Backlog Panel */}
+      <div className="grid-responsive-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 20, alignItems: 'flex-start' }}>
         {/* Left Column: Sprints / Phases */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0, overflow: 'hidden' }}>
           {sprints.length === 0 ? (
             <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--text-muted)' }}>
               No sprints or phases configured for this project yet.
@@ -287,6 +287,7 @@ export default function BacklogPage() {
             border: '2px dashed var(--primary-border)',
             boxShadow: 'var(--shadow-md)',
             marginTop: 0,
+            minWidth: 0,
           }}
         >
           <div
