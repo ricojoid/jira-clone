@@ -497,18 +497,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Column: Active Sprints & Assigned Tasks */}
+        {/* Right Column: Active Phases & Assigned Tasks */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Active Sprints Card */}
+          {/* Active Phases Card */}
           <div className="card" style={{ padding: 22, backgroundColor: '#ffffff' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <PlayCircle size={20} color="#dc2626" />
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Active Sprints</h3>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Active Phases</h3>
             </div>
 
             {sprints.length === 0 ? (
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                No active sprints running right now.
+                No active phases running right now.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
