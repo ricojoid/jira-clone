@@ -162,7 +162,7 @@ export default function ManageProjectMembersModal({
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 140px auto',
+                  gridTemplateColumns: '1fr auto',
                   gap: 12,
                   alignItems: 'center',
                 }}
@@ -175,19 +175,9 @@ export default function ManageProjectMembersModal({
                   <option value="">-- Select User to Assign --</option>
                   {availableUsers.map((u) => (
                     <option key={u.id || u._id} value={u.id || u._id}>
-                      {u.full_name || u.username || u.name} ({u.email})
+                      {u.full_name || u.name || u.username}
                     </option>
                   ))}
-                </select>
-
-                <select
-                  className="form-select"
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin / PM</option>
-                  <option value="viewer">Viewer</option>
                 </select>
 
                 <Button

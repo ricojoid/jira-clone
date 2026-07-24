@@ -656,10 +656,7 @@ export default function DashboardPage() {
                       style={{ cursor: 'pointer', accentColor: '#dc2626' }}
                     />
                     <div style={{ fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.full_name || u.username || u.name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      @{u.username}
+                      {u.full_name || u.name || u.username}
                     </div>
                   </label>
                 );
