@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { momApi, getAttachmentUrl } from '../api';
+import { exportMomToExcel } from '../utils/excelExport';
 import Button from '../components/ui/Button';
 import {
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   Edit2,
   Trash2,
   Building,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export default function MoMDetailPage() {
@@ -137,6 +139,9 @@ export default function MoMDetailPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
+          <Button variant="secondary" icon={FileSpreadsheet} onClick={() => exportMomToExcel(mom)}>
+            Export Excel
+          </Button>
           {mom.can_delete !== false && (
             <Button variant="danger" icon={Trash2} onClick={handleDelete}>
               Delete MoM

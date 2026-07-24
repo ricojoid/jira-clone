@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { momApi, projectApi, getAttachmentUrl } from '../api';
+import { exportMomToExcel } from '../utils/excelExport';
 import Button from '../components/ui/Button';
 import {
   FileText,
@@ -18,6 +19,7 @@ import {
   Filter,
   Building,
   CheckCircle2,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export default function MoMPage() {
@@ -415,6 +417,14 @@ export default function MoMPage() {
                     style={{ padding: 6 }}
                   >
                     <Eye size={16} />
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => exportMomToExcel(mom)}
+                    title="Export Excel"
+                    style={{ padding: 6, color: '#16a34a' }}
+                  >
+                    <FileSpreadsheet size={16} />
                   </button>
                   {mom.can_edit !== false && (
                     <button

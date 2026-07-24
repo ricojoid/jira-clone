@@ -88,3 +88,128 @@ export function exportBoardToExcel(issues = [], projectName = 'Project') {
   // Download file
   XLSX.writeFile(workbook, filename);
 }
+
+/**
+ * Exports a single Minutes of Meeting (MoM) record to an Excel (.xls / .xlsx) file
+ * with proper cell borders, bold headers, and styled column layout.
+ * 
+ * @param {Object} mom - MoM object data
+ */
+export function exportMomToExcel(mom) {
+  if (!mom) {
+    alert('No MoM data available to export.');
+    return;
+  }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const escapeHtml = (str) => {
+    if (!str) return '-';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '<br/>');
+  };
+
+  const meetingDateTimeStr = `${formatDate(mom.meeting_date)} From: ${mom.meeting_time_from || '--:--'} To: ${mom.meeting_time_to || '--:--'}`;
+  const projectName = mom.project_name || mom.project_id || '-';
+  const reportDateStr = formatDate(mom.report_date);
+  const reportByStr = mom.report_by || '-';
+  const attendanceStr = mom.attendance || '-';
+  const agendaStr = mom.agenda || '-';
+  const resultStr = mom.meeting_result || '-';
+  const nextActionStr = mom.next_action || '-';
+
+  const htmlTable = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8">
+  <!--[if gte mso 9]>
+  <xml>
+    <x:ExcelWorkbook>
+      <x:ExcelWorksheets>
+        <x:ExcelWorksheet>
+          <x:Name>Minutes of Meeting</x:Name>
+          <x:WorksheetOptions>
+            <x:DisplayGridlines/>
+          </x:WorksheetOptions>
+        </x:ExcelWorksheet>
+      </x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+  </xml>
+  <![endif]-->
+  <style>
+    body { font-family: Arial, sans-serif; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #475569; padding: 10px 14px; vertical-align: top; font-size: 10.5pt; }
+    .title-cell { font-size: 16pt; font-weight: bold; text-align: center; background-color: #1e293b; color: #ffffff; padding: 14px; border: 1px solid #1e293b; }
+    .label-cell { font-weight: bold; background-color: #f1f5f9; color: #0f172a; width: 150px; }
+    .value-cell { color: #1e293b; white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <table>
+    <tr>
+      <td colspan="4" class="title-cell">Minutes of Meeting</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Project</td>
+      <td colspan="3" class="value-cell">${escapeHtml(projectName)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Meeting Date</td>
+      <td class="value-cell">${escapeHtml(meetingDateTimeStr)}</td>
+      <td class="label-cell">Report Date</td>
+      <td class="value-cell">${escapeHtml(reportDateStr)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Attendance</td>
+      <td class="value-cell">${escapeHtml(attendanceStr)}</td>
+      <td class="label-cell">Report By</td>
+      <td class="value-cell">${escapeHtml(reportByStr)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Agenda</td>
+      <td colspan="3" class="value-cell">${escapeHtml(agendaStr)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Meeting Result</td>
+      <td colspan="3" class="value-cell">${escapeHtml(resultStr)}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">Next Action</td>
+      <td colspan="3" class="value-cell">${escapeHtml(nextActionStr)}</td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const cleanTitle = (mom.title || 'MoM').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const dateTag = mom.meeting_date || 'date';
+  const filename = `MoM_${cleanTitle}_${dateTag}.xls`;
+
+  const blob = new Blob(['\ufeff' + htmlTable], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+
