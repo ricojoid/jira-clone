@@ -15,6 +15,7 @@ backend/.venv/
 backend/env/
 
 # IDEs and OS files
+.agents/
 .vscode/
 .idea/
 .DS_Store

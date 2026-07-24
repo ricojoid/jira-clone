@@ -110,6 +110,7 @@ def get_issue(
 
 import re
 from app.models.notification import Notification
+from app.core.websocket import dispatch_notification_sync
 
 def _notify_task_assigned(db: Session, issue: Issue, sender: User):
     if issue.assignee_id and issue.assignee_id != sender.id:
@@ -123,6 +124,27 @@ def _notify_task_assigned(db: Session, issue: Issue, sender: User):
             message=f"{sender_name} assigned task '{issue.issue_key}: {issue.title}' to you",
         )
         db.add(notif)
+        db.flush()
+        dispatch_notification_sync(
+            issue.assignee_id,
+            {
+                "id": notif.id,
+                "user_id": notif.user_id,
+                "sender_id": notif.sender_id,
+                "issue_id": notif.issue_id,
+                "type": notif.type,
+                "title": notif.title,
+                "message": notif.message,
+                "is_read": False,
+                "created_at": notif.created_at.isoformat() if notif.created_at else None,
+                "sender": {
+                    "id": sender.id,
+                    "username": sender.username,
+                    "full_name": sender.full_name,
+                    "avatar_url": getattr(sender, "avatar_url", None),
+                },
+            },
+        )
 
 
 def _notify_comment_mentions(db: Session, comment_content: str, issue: Issue, author: User):
@@ -163,6 +185,27 @@ def _notify_comment_mentions(db: Session, comment_content: str, issue: Issue, au
             message=f'{author_name} mentioned you in "{issue.issue_key}": "{snippet}"',
         )
         db.add(notif)
+        db.flush()
+        dispatch_notification_sync(
+            t_user.id,
+            {
+                "id": notif.id,
+                "user_id": notif.user_id,
+                "sender_id": notif.sender_id,
+                "issue_id": notif.issue_id,
+                "type": notif.type,
+                "title": notif.title,
+                "message": notif.message,
+                "is_read": False,
+                "created_at": notif.created_at.isoformat() if notif.created_at else None,
+                "sender": {
+                    "id": author.id,
+                    "username": author.username,
+                    "full_name": author.full_name,
+                    "avatar_url": getattr(author, "avatar_url", None),
+                },
+            },
+        )
 
 
 @router.post("", response_model=IssueResponse, status_code=status.HTTP_201_CREATED)

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, MessageSquare, UserCheck, Inbox } from 'lucide-react';
 import { notificationApi } from '../../api';
 import Avatar from '../ui/Avatar';
+import { useWebSocketNotification } from '../../hooks/useWebSocketNotification';
 
 export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -11,6 +12,16 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleRealtimeNotification = useCallback((newNotif) => {
+    setUnreadCount((prev) => prev + 1);
+    setNotifications((prev) => {
+      if (prev.some((n) => n.id === newNotif.id)) return prev;
+      return [newNotif, ...prev];
+    });
+  }, []);
+
+  useWebSocketNotification(handleRealtimeNotification);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -35,7 +46,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 15000); // poll every 15s
+    const interval = setInterval(fetchUnreadCount, 30000); // 30s fallback poll
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications, upload
+from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications, upload, ws_notifications
 from app.models.user import User
 from app.core.security import get_password_hash
 import app.models
@@ -95,6 +95,7 @@ app.include_router(users.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
+app.include_router(ws_notifications.router, prefix="/api")
 
 
 @app.get("/api/health")
