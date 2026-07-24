@@ -45,12 +45,13 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
     const fetchData = async () => {
       try {
-        const [usersRes, sprintsRes, projRes] = await Promise.all([
-          userApi.list(),
+        const [membersRes, sprintsRes, projRes] = await Promise.all([
+          projectApi.listMembers(projectId).catch(() => ({ data: [] })),
           sprintApi.listByProject(projectId),
           projectApi.get(projectId).catch(() => ({ data: null })),
         ]);
-        setUsers(usersRes.data || []);
+        const projectMembers = (membersRes.data || []).map((m) => m.user || m);
+        setUsers(projectMembers);
         if (projRes.data) setProject(projRes.data);
 
         const sprintList = sprintsRes.data?.sprints ?? sprintsRes.data ?? [];

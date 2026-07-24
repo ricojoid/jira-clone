@@ -10,13 +10,15 @@ import {
   PlayCircle,
   Zap,
   Layers,
+  Users,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { projectApi, sprintApi, issueApi } from '../api';
+import { projectApi, sprintApi, issueApi, userApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge, PriorityBadge, DeadlineBadge } from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import ManageProjectMembersModal from '../components/project/ManageProjectMembersModal';
 
 function generateKey(name) {
   if (!name) return 'PRJ';
@@ -52,7 +54,10 @@ export default function DashboardPage() {
   // Modal State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', key: '', description: '', sdlc_type: 'scrum' });
+  const [systemUsers, setSystemUsers] = useState([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [creating, setCreating] = useState(false);
+  const [activeMemberProjectId, setActiveMemberProjectId] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,6 +107,14 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (dialogOpen) {
+      userApi.list().then((res) => {
+        setSystemUsers(res.data || []);
+      }).catch(() => {});
+    }
+  }, [dialogOpen]);
+
   const handleNameChange = (e) => {
     const name = e.target.value;
     setForm((prev) => ({ ...prev, name, key: generateKey(name) }));
@@ -126,11 +139,22 @@ export default function DashboardPage() {
       });
       const newProj = res.data;
       const newProjId = newProj.id || newProj._id;
+
+      // Assign selected members to project
+      if (selectedMemberIds.length > 0) {
+        await Promise.all(
+          selectedMemberIds.map((userId) =>
+            projectApi.addMember(newProjId, { user_id: Number(userId), role: 'member' }).catch(() => {})
+          )
+        );
+      }
+
       setProjects((prev) => [newProj, ...prev]);
       setIssuesMap((prev) => ({ ...prev, [newProjId]: [] }));
-      toast.success('Project created successfully');
+      toast.success('Project created and members assigned successfully!');
       setDialogOpen(false);
       setForm({ name: '', key: '', description: '', sdlc_type: 'scrum' });
+      setSelectedMemberIds([]);
       await fetchData();
     } catch (err) {
       toast.error(err?.response?.data?.detail ?? 'Failed to create project');
@@ -190,7 +214,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            Workspace Management Overview
+            Project Management Overview
           </h1>
         </div>
 
@@ -272,7 +296,7 @@ export default function DashboardPage() {
           <div className="card" style={{ padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                Workspace Projects ({projects.length})
+                Projects
               </h3>
             </div>
 
@@ -337,14 +361,40 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-light)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 6, fontWeight: 700 }}>
-                          <span style={{ color: 'var(--text-muted)' }}>{issues.length} tasks</span>
-                          <span style={{ color: '#dc2626' }}>{pct}% complete</span>
+                      <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.75rem', marginBottom: 6, fontWeight: 700 }}>
+                            <span style={{ color: '#dc2626' }}>{pct}% complete</span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, backgroundColor: '#fee2e2', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#16a34a' : '#dc2626', transition: 'width 0.3s' }} />
+                          </div>
                         </div>
-                        <div style={{ height: 6, borderRadius: 3, backgroundColor: '#fee2e2', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#16a34a' : '#dc2626', transition: 'width 0.3s' }} />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMemberProjectId(projId);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                          }}
+                          className="card-hover"
+                          title="Manage Members"
+                        >
+                          <Users size={14} />
+                          <span>Members</span>
+                        </button>
                       </div>
                     </div>
                   );
@@ -549,7 +599,86 @@ export default function DashboardPage() {
             onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
           />
         </div>
+
+        {/* Member Assignment Section */}
+        <div className="form-group" style={{ marginTop: 16 }}>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Assign Project Members (Optional)</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {selectedMemberIds.length} members selected
+            </span>
+          </label>
+
+          <div
+            style={{
+              maxHeight: 160,
+              overflowY: 'auto',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              padding: 8,
+              backgroundColor: 'var(--bg-app)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
+            {systemUsers
+              .filter((u) => (u.id || u._id) !== (user?.id || user?._id) && !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase()))
+              .map((u) => {
+                const uId = u.id || u._id;
+                const isChecked = selectedMemberIds.includes(uId);
+                return (
+                  <label
+                    key={uId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg-surface)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      border: `1px solid ${isChecked ? 'var(--primary-border)' : 'var(--border-light)'}`,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedMemberIds((prev) => [...prev, uId]);
+                        } else {
+                          setSelectedMemberIds((prev) => prev.filter((id) => id !== uId));
+                        }
+                      }}
+                      style={{ cursor: 'pointer', accentColor: '#dc2626' }}
+                    />
+                    <div style={{ fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.full_name || u.username || u.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      @{u.username}
+                    </div>
+                  </label>
+                );
+              })}
+            {systemUsers.length <= 1 && (
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', padding: 8 }}>
+                No other users available to assign.
+              </div>
+            )}
+          </div>
+        </div>
       </Modal>
+
+      <ManageProjectMembersModal
+        open={Boolean(activeMemberProjectId)}
+        onClose={() => setActiveMemberProjectId(null)}
+        projectId={activeMemberProjectId}
+        onMembersUpdated={fetchData}
+      />
     </div>
   );
 }

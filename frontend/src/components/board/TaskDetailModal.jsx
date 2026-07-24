@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Trash2, Edit2, Send, Plus, X, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { issueApi, userApi, sprintApi, getAttachmentUrl } from '../../api';
+import { issueApi, userApi, sprintApi, projectApi, getAttachmentUrl } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -51,11 +51,12 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
 
       const actualProjectId = issueData.project_id;
 
-      const [usersRes, sprintsRes] = await Promise.all([
-        userApi.list().catch(() => ({ data: [] })),
+      const [membersRes, sprintsRes] = await Promise.all([
+        projectApi.listMembers(actualProjectId).catch(() => ({ data: [] })),
         sprintApi.listByProject(actualProjectId).catch(() => ({ data: [] })),
       ]);
-      setUsers(usersRes.data || []);
+      const projectMembers = (membersRes.data || []).map((m) => m.user || m);
+      setUsers(projectMembers);
       setSprints(sprintsRes.data || []);
 
       try {
@@ -461,7 +462,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
               <div style={{ display: 'flex', gap: 12 }}>
                 <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={32} />
                 <div style={{ flex: 1 }}>
-                  <CommentInputWithMention onSubmit={handleAddComment} submitting={submittingComment} />
+                  <CommentInputWithMention onSubmit={handleAddComment} submitting={submittingComment} allowedUsers={users} />
                 </div>
               </div>
             </div>

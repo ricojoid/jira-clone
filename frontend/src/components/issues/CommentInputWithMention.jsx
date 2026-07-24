@@ -9,9 +9,10 @@ export default function CommentInputWithMention({
   onSubmit,
   submitting = false,
   placeholder = 'Add a comment... (Type @ to mention, click 📎 to attach photo/file)',
+  allowedUsers = null,
 }) {
   const [content, setContent] = useState('');
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(allowedUsers || []);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionIndex, setMentionIndex] = useState(-1);
@@ -26,6 +27,10 @@ export default function CommentInputWithMention({
   const fileInputRef = useRef(null);
 
   useEffect(() => {
+    if (allowedUsers && Array.isArray(allowedUsers)) {
+      setUsers(allowedUsers);
+      return;
+    }
     const fetchUsers = async () => {
       try {
         const res = await userApi.list();
@@ -35,7 +40,7 @@ export default function CommentInputWithMention({
       }
     };
     fetchUsers();
-  }, []);
+  }, [allowedUsers]);
 
   const filteredUsers = users.filter((u) => {
     if (!mentionQuery) return true;

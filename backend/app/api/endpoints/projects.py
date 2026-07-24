@@ -23,28 +23,21 @@ def list_projects(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.models.issue import Issue
-
     user_role = (getattr(current_user, 'role', '') or '').lower()
     is_admin = user_role in ['super_admin', 'super admin', 'admin']
     if is_admin:
         return db.query(Project).all()
 
-    # Get projects where user is owner or member or has assigned issues
+    # Get projects where user is owner or explicit project member
     member_project_ids = (
         db.query(ProjectMember.project_id)
         .filter(ProjectMember.user_id == current_user.id)
-    )
-    issue_project_ids = (
-        db.query(Issue.project_id)
-        .filter(Issue.assignee_id == current_user.id)
     )
     projects = (
         db.query(Project)
         .filter(
             (Project.owner_id == current_user.id)
             | (Project.id.in_(member_project_ids))
-            | (Project.id.in_(issue_project_ids))
         )
         .all()
     )
@@ -183,11 +176,31 @@ def list_members(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
     members = (
         db.query(ProjectMember)
         .filter(ProjectMember.project_id == project_id)
         .all()
     )
+
+    existing_user_ids = {m.user_id for m in members}
+    if project.owner_id not in existing_user_ids:
+        owner_member = ProjectMember(
+            project_id=project_id,
+            user_id=project.owner_id,
+            role="admin",
+        )
+        db.add(owner_member)
+        db.commit()
+        members = (
+            db.query(ProjectMember)
+            .filter(ProjectMember.project_id == project_id)
+            .all()
+        )
+
     return members
 
 

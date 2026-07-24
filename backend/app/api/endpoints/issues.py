@@ -159,9 +159,17 @@ def _notify_comment_mentions(db: Session, comment_content: str, issue: Issue, au
     if not mentioned_names:
         return
 
-    all_users = db.query(User).filter(User.is_active == True).all()
+    from app.models.project import ProjectMember
+    member_user_ids = {
+        pm.user_id for pm in db.query(ProjectMember).filter(ProjectMember.project_id == issue.project_id).all()
+    }
+    if issue.project and issue.project.owner_id:
+        member_user_ids.add(issue.project.owner_id)
+
+    project_users = db.query(User).filter(User.id.in_(member_user_ids), User.is_active == True).all() if member_user_ids else []
+
     target_users = set()
-    for u in all_users:
+    for u in project_users:
         if u.id == author.id:
             continue
         uname = (u.username or '').lower()
