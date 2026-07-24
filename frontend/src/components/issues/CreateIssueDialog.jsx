@@ -4,7 +4,7 @@ import { issueApi, userApi, sprintApi, projectApi } from '../../api';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
-import { TYPE_META, PRIORITY_META, TypeIcon } from '../ui/Badge';
+import { TYPE_META, PRIORITY_META, STATUS_META, TypeIcon } from '../ui/Badge';
 
 const WATERFALL_DEFAULT_PHASES = [
   { code: 'UR', name: 'UR' },
@@ -24,6 +24,7 @@ const getInitialForm = () => ({
   description: '',
   type: 'task',
   priority: 'medium',
+  status: 'todo',
   assignee_id: '',
   sprint_id: '',
   story_points: '',
@@ -224,7 +225,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="form-label">Issue Type</label>
           <select className="form-select" value={form.type} onChange={handleChange('type')}>
@@ -240,6 +241,17 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
           <label className="form-label">Priority</label>
           <select className="form-select" value={form.priority} onChange={handleChange('priority')}>
             {Object.entries(PRIORITY_META).map(([key, meta]) => (
+              <option key={key} value={key}>
+                {meta.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Status</label>
+          <select className="form-select" value={form.status} onChange={handleChange('status')}>
+            {Object.entries(STATUS_META).map(([key, meta]) => (
               <option key={key} value={key}>
                 {meta.label}
               </option>

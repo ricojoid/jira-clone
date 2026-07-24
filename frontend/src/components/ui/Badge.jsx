@@ -10,10 +10,13 @@ import {
 } from 'lucide-react';
 
 export const STATUS_META = {
-  todo: { label: 'To Do', className: 'badge-todo', icon: Clock },
-  in_progress: { label: 'In Progress', className: 'badge-in_progress', icon: AlertCircle },
-  in_review: { label: 'In Review', className: 'badge-in_review', icon: Clock },
-  done: { label: 'Done', className: 'badge-done', icon: CheckCircle2 },
+  todo: { label: 'To Do', className: 'badge-todo', color: '#64748b', bg: '#f1f5f9', icon: Clock },
+  in_progress: { label: 'In Progress', className: 'badge-in_progress', color: '#2563eb', bg: '#eff6ff', icon: AlertCircle },
+  ready_to_review_fid: { label: 'Ready to Review FID', className: 'badge-ready_fid', color: '#7c3aed', bg: '#f5f3ff', icon: Clock },
+  fid_review: { label: 'FID Review', className: 'badge-fid_review', color: '#9333ea', bg: '#faf5ff', icon: AlertCircle },
+  ready_to_is_review: { label: 'Ready to IS Review', className: 'badge-ready_is', color: '#d97706', bg: '#fffbeb', icon: Clock },
+  is_review: { label: 'IS Review', className: 'badge-is_review', color: '#ca8a04', bg: '#fefce8', icon: AlertCircle },
+  done: { label: 'Done', className: 'badge-done', color: '#16a34a', bg: '#f0fdf4', icon: CheckCircle2 },
 };
 
 export const TYPE_META = {
@@ -33,11 +36,20 @@ export const PRIORITY_META = {
 };
 
 export function StatusBadge({ status }) {
-  const meta = STATUS_META[status] || STATUS_META.todo;
-  const Icon = meta.icon;
+  const normKey = (status || 'todo').toLowerCase().replace(/\s+/g, '_');
+  const meta = STATUS_META[normKey] || STATUS_META[status] || { label: status || 'To Do', color: '#64748b', bg: '#f1f5f9', icon: Clock };
+  const Icon = meta.icon || Clock;
 
   return (
-    <span className={`badge ${meta.className}`}>
+    <span
+      className="badge"
+      style={{
+        backgroundColor: meta.bg || '#f1f5f9',
+        color: meta.color || '#64748b',
+        border: `1px solid ${meta.color || '#64748b'}30`,
+        whiteSpace: 'nowrap',
+      }}
+    >
       <Icon size={12} />
       {meta.label}
     </span>

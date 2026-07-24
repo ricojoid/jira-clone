@@ -15,8 +15,12 @@ export function exportBoardToExcel(issues = [], projectName = 'Project') {
   const statusLabels = {
     todo: 'To Do',
     in_progress: 'In Progress',
-    in_review: 'In Review',
+    ready_to_review_fid: 'Ready to Review FID',
+    fid_review: 'FID Review',
+    ready_to_is_review: 'Ready to IS Review',
+    is_review: 'IS Review',
     done: 'Done',
+    in_review: 'In Review',
   };
 
   const priorityLabels = {

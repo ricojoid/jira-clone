@@ -88,10 +88,13 @@ def create_project(
     db.flush()
 
     default_columns = [
-        {"name": "To Do", "position": 0, "color": "#94a3b8"},
-        {"name": "In Progress", "position": 1, "color": "#3b82f6"},
-        {"name": "In Review", "position": 2, "color": "#f59e0b"},
-        {"name": "Done", "position": 3, "color": "#22c55e"},
+        {"name": "To Do", "position": 0, "color": "#64748b"},
+        {"name": "In Progress", "position": 1, "color": "#2563eb"},
+        {"name": "Ready to Review FID", "position": 2, "color": "#7c3aed"},
+        {"name": "FID Review", "position": 3, "color": "#9333ea"},
+        {"name": "Ready to IS Review", "position": 4, "color": "#d97706"},
+        {"name": "IS Review", "position": 5, "color": "#ca8a04"},
+        {"name": "Done", "position": 6, "color": "#16a34a"},
     ]
     for col in default_columns:
         db.add(BoardColumn(board_id=board.id, **col))

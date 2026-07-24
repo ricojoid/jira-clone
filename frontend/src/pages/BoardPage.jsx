@@ -13,10 +13,13 @@ import DateFilterInput from '../components/ui/DateFilterInput';
 import { exportBoardToExcel } from '../utils/excelExport';
 
 const DEFAULT_COLUMNS = [
-  { id: 'todo', name: 'To Do', status: 'todo', color: '#94a3b8' },
-  { id: 'in_progress', name: 'In Progress', status: 'in_progress', color: '#3b82f6' },
-  { id: 'in_review', name: 'In Review', status: 'in_review', color: '#f59e0b' },
-  { id: 'done', name: 'Done', status: 'done', color: '#22c55e' },
+  { id: 'todo', name: 'To Do', status: 'todo', color: '#64748b' },
+  { id: 'in_progress', name: 'In Progress', status: 'in_progress', color: '#2563eb' },
+  { id: 'ready_to_review_fid', name: 'Ready to Review FID', status: 'ready_to_review_fid', color: '#7c3aed' },
+  { id: 'fid_review', name: 'FID Review', status: 'fid_review', color: '#9333ea' },
+  { id: 'ready_to_is_review', name: 'Ready to IS Review', status: 'ready_to_is_review', color: '#d97706' },
+  { id: 'is_review', name: 'IS Review', status: 'is_review', color: '#ca8a04' },
+  { id: 'done', name: 'Done', status: 'done', color: '#16a34a' },
 ];
 
 export default function BoardPage() {
@@ -53,7 +56,7 @@ export default function BoardPage() {
       const boardRes = await boardApi.listByProject(projectId);
       const boardData = Array.isArray(boardRes.data) ? boardRes.data[0] : boardRes.data;
 
-      if (boardData && boardData.columns && boardData.columns.length > 0) {
+      if (boardData && boardData.columns && boardData.columns.length >= 7) {
         setBoard(boardData);
         const normColumns = boardData.columns.map((col) => {
           let status = col.status;
@@ -159,7 +162,7 @@ export default function BoardPage() {
   const isWaterfall = (project?.sdlc_type || '').toLowerCase() === 'waterfall';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', minHeight: 0, flex: 1 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
@@ -286,7 +289,7 @@ export default function BoardPage() {
       </div>
 
       {/* Board Columns */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <KanbanBoard
           columns={columns}
           issues={filteredIssues}

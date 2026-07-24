@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   DndContext,
   closestCorners,
@@ -184,6 +184,24 @@ export default function KanbanBoard({
     [findColumnForItem, issuesByColumn, columns, handleMove]
   );
 
+  const scrollContainerRef = useRef(null);
+
+  const handleWheel = (e) => {
+    if (scrollContainerRef.current && e.deltaY !== 0 && !e.shiftKey) {
+      const isTargetVerticallyScrollable = e.target.closest('.kanban-column-cards');
+      if (isTargetVerticallyScrollable) {
+        const { scrollTop, scrollHeight, clientHeight } = isTargetVerticallyScrollable;
+        const isScrollable = scrollHeight > clientHeight;
+        const atTop = scrollTop === 0 && e.deltaY < 0;
+        const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) <= 1 && e.deltaY > 0;
+        if (isScrollable && !atTop && !atBottom) {
+          return;
+        }
+      }
+      scrollContainerRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
   const handleDragCancel = useCallback(() => {
     setActiveIssue(null);
   }, []);
@@ -198,29 +216,43 @@ export default function KanbanBoard({
       measuring={measuringConfig}
     >
       <div
-        className="kanban-board-scroll"
+        ref={scrollContainerRef}
+        onWheel={handleWheel}
         style={{
-          display: 'inline-flex',
-          gap: 16,
-          minWidth: '100%',
-          width: 'max-content',
-          minHeight: 'calc(100vh - 180px)',
-          alignItems: 'flex-start',
-          paddingBottom: 16,
+          width: '100%',
+          height: '100%',
+          flex: 1,
+          minHeight: 0,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          paddingBottom: 8,
+          boxSizing: 'border-box',
         }}
       >
-        {(columns || []).map((column) => {
-          const colId = getColKey(column);
-          return (
-            <KanbanColumn
-              key={colId}
-              column={column}
-              issues={issuesByColumn[colId] || []}
-              onIssueClick={onIssueClick}
-              onAddIssue={onAddIssue}
-            />
-          );
-        })}
+        <div
+          className="kanban-board-scroll"
+          style={{
+            display: 'flex',
+            gap: 16,
+            minWidth: 'max-content',
+            height: '100%',
+            alignItems: 'stretch',
+            paddingBottom: 4,
+          }}
+        >
+          {(columns || []).map((column) => {
+            const colId = getColKey(column);
+            return (
+              <KanbanColumn
+                key={colId}
+                column={column}
+                issues={issuesByColumn[colId] || []}
+                onIssueClick={onIssueClick}
+                onAddIssue={onAddIssue}
+              />
+            );
+          })}
+        </div>
       </div>
 
       <DragOverlay dropAnimation={null}>

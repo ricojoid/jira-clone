@@ -50,6 +50,8 @@ export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue 
         width: 320,
         minWidth: 300,
         maxWidth: 340,
+        height: '100%',
+        maxHeight: '100%',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'var(--bg-surface)',
@@ -115,10 +117,11 @@ export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue 
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
+          className="kanban-column-cards"
           style={{
             flex: 1,
+            minHeight: 0,
             padding: 12,
-            minHeight: 200,
             overflowY: 'auto',
             backgroundColor: isOver ? 'var(--primary-light)' : 'var(--bg-app)',
             transition: 'background-color 0.15s ease',

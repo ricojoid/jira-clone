@@ -62,10 +62,10 @@ export default function MainLayout() {
         />
       </div>
 
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh', overflow: 'hidden' }}>
+      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100vh', maxHeight: '100vh', overflow: 'hidden' }}>
         <TopBar onMobileMenuToggle={handleToggleMobileMenu} />
         <div
-          style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '24px 32px' }}
+          style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column' }}
           className="app-container"
         >
           <Outlet />
