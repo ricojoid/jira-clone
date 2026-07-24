@@ -15,7 +15,7 @@ import { formatDateForDateInput } from '../../utils/deadline';
 
 export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   const navigate = useNavigate();
-  const { user, isPM } = useAuth();
+  const { user, isPM, isSuperAdmin } = useAuth();
 
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -159,9 +159,11 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
     }
   };
 
+  const canDelete = isPM || isSuperAdmin || (user && issue && (user.id === issue.reporter_id || user.id === issue.project?.owner_id));
+
   const handleDelete = async () => {
-    if (!isPM) {
-      toast.error('Only Project Managers or Super Admins can delete issues');
+    if (!canDelete) {
+      toast.error('Only the reporter, Project Manager, or Super Admin can delete issues');
       return;
     }
     if (!window.confirm('Are you sure you want to delete this issue?')) return;
@@ -558,7 +560,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 >
                   Full View
                 </Button>
-                {isPM && (
+                {canDelete && (
                   <Button variant="danger" size="sm" icon={Trash2} onClick={handleDelete}>
                     Delete
                   </Button>

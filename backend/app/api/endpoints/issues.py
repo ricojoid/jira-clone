@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
@@ -329,22 +330,70 @@ def move_issue(
     return issue
 
 
+def _remove_attachment_file(attachment_url: Optional[str]):
+    if not attachment_url:
+        return
+    try:
+        if "/uploads/" in attachment_url:
+            filename = attachment_url.split("/uploads/")[-1]
+        else:
+            filename = os.path.basename(attachment_url)
+
+        if filename:
+            safe_filename = os.path.basename(filename)
+            file_path = os.path.join(os.getcwd(), "uploads", safe_filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted physical attachment file: {file_path}")
+    except Exception as e:
+        print("Error removing attachment file:", e)
+
+
+def _delete_single_issue_and_resources(db: Session, target_issue: Issue):
+    # 1. Clean up comments and their physical attachment files
+    comments = db.query(Comment).filter(Comment.issue_id == target_issue.id).all()
+    for comment in comments:
+        _remove_attachment_file(comment.attachment_url)
+        db.delete(comment)
+
+    # 2. Clean up notifications referencing target_issue
+    db.query(Notification).filter(Notification.issue_id == target_issue.id).delete(synchronize_session=False)
+
+    # 3. Clear labels
+    target_issue.labels.clear()
+
+    # 4. Recursively delete subtasks / child issues and their resources
+    child_issues = db.query(Issue).filter(Issue.parent_id == target_issue.id).all()
+    for child in child_issues:
+        _delete_single_issue_and_resources(db, child)
+
+    # 5. Delete issue itself
+    db.delete(target_issue)
+
+
 @router.delete("/{issue_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_issue(
     issue_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_role = (getattr(current_user, 'role', 'pm') or 'pm').lower()
-    if user_role not in ["pm", "project_manager", "admin", "super_admin", "super admin", "superadmin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Hanya user dengan role Project Manager (PM) atau Super Admin yang dapat menghapus issue",
-        )
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
-    db.delete(issue)
+
+    user_role = (getattr(current_user, "role", "") or "").lower()
+    is_super_admin = user_role in ["super_admin", "super admin", "superadmin", "admin"]
+    is_pm = is_super_admin or user_role in ["pm", "project_manager"]
+    is_owner = bool(issue.project and current_user.id == issue.project.owner_id)
+    is_reporter = bool(issue.reporter_id and current_user.id == issue.reporter_id)
+
+    if not (is_super_admin or is_pm or is_owner or is_reporter):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya pembuat issue, Project Manager, atau Super Admin yang dapat menghapus issue",
+        )
+
+    _delete_single_issue_and_resources(db, issue)
     db.commit()
 
 
@@ -399,8 +448,14 @@ def delete_comment(
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    if comment.author_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+
+    user_role = (getattr(current_user, "role", "") or "").lower()
+    is_admin_or_pm = user_role in ["super_admin", "super admin", "superadmin", "admin", "pm", "project_manager"]
+    is_author = comment.author_id == current_user.id
+    if not (is_author or is_admin_or_pm):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+
+    _remove_attachment_file(comment.attachment_url)
     db.delete(comment)
     db.commit()
 
