@@ -1,5 +1,6 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from app.core.database import get_db
@@ -40,6 +41,15 @@ def _generate_issue_key(db: Session, project_id: int) -> str:
     return f"{project.key}-{max_num + 1}"
 
 
+def _is_pm_or_admin_or_owner(user: User, project: Optional[Project] = None) -> bool:
+    user_role = (getattr(user, "role", "") or "").lower()
+    if user_role in ["super_admin", "super admin", "superadmin", "admin", "pm", "project_manager"]:
+        return True
+    if project and project.owner_id == user.id:
+        return True
+    return False
+
+
 @router.get("/project/{project_id}", response_model=List[IssueBrief])
 def list_issues(
     project_id: int,
@@ -51,11 +61,22 @@ def list_issues(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
     query = (
         db.query(Issue)
         .options(joinedload(Issue.assignee), joinedload(Issue.labels))
         .filter(Issue.project_id == project_id)
     )
+
+    # Restriction: Regular members can ONLY view tasks assigned to them OR created by them
+    if not _is_pm_or_admin_or_owner(current_user, project):
+        query = query.filter(
+            or_(Issue.assignee_id == current_user.id, Issue.reporter_id == current_user.id)
+        )
+
     if status:
         query = query.filter(Issue.status == status)
     if issue_type:
@@ -77,10 +98,19 @@ def get_backlog(
     db: Session = Depends(get_db),
 ):
     """Get issues not assigned to any sprint (backlog)"""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    query = db.query(Issue).filter(Issue.project_id == project_id, Issue.sprint_id.is_(None))
+
+    if not _is_pm_or_admin_or_owner(current_user, project):
+        query = query.filter(
+            or_(Issue.assignee_id == current_user.id, Issue.reporter_id == current_user.id)
+        )
+
     return (
-        db.query(Issue)
-        .filter(Issue.project_id == project_id, Issue.sprint_id.is_(None))
-        .order_by(Issue.position)
+        query.order_by(Issue.position)
         .all()
     )
 
@@ -106,6 +136,15 @@ def get_issue(
     )
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
+
+    # Regular member access control: can only view tasks assigned to them or created by them
+    if not _is_pm_or_admin_or_owner(current_user, issue.project):
+        if issue.assignee_id != current_user.id and issue.reporter_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Anggota hanya dapat melihat task yang di-assign kepada mereka",
+            )
+
     return issue
 
 
