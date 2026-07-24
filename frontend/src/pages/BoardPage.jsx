@@ -76,8 +76,8 @@ export default function BoardPage() {
       });
       setIssues(issueRes.data?.issues ?? issueRes.data ?? []);
 
-      const userRes = await userApi.list();
-      setAssignees(userRes.data || []);
+      const membersRes = await projectApi.listMembers(projectId).catch(() => ({ data: [] }));
+      setAssignees(membersRes.data || []);
     } catch (err) {
       console.error('Failed to fetch board data:', err);
       toast.error('Failed to load board information');
@@ -220,12 +220,18 @@ export default function BoardPage() {
         >
           <option value="">All Assignees</option>
           {assignees
-            .filter((a) => !['super_admin', 'super admin', 'superadmin', 'admin'].includes((a.role || '').toLowerCase()))
-            .map((a) => (
-              <option key={a.id || a._id} value={a.id || a._id}>
-                {a.full_name || a.username}
-              </option>
-            ))}
+            .filter((m) => {
+              const u = m.user || m;
+              return !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase());
+            })
+            .map((m) => {
+              const u = m.user || m;
+              return (
+                <option key={u.id || u._id} value={u.id || u._id}>
+                  {u.full_name || u.name || u.username}
+                </option>
+              );
+            })}
         </select>
 
         <select
