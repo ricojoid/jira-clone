@@ -1,5 +1,29 @@
 import { useEffect, useRef } from 'react';
 
+const getWsUrl = (token) => {
+  if (import.meta.env.VITE_WS_URL) {
+    const baseUrl = import.meta.env.VITE_WS_URL.replace(/\/$/, '');
+    return `${baseUrl}/api/ws/notifications?token=${encodeURIComponent(token)}`;
+  }
+
+  // Derive from VITE_API_BASE_URL if provided as absolute URL
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+  if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+    const wsProto = apiBase.startsWith('https://') ? 'wss:' : 'ws:';
+    const origin = apiBase.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '');
+    return `${wsProto}//${origin}/api/ws/notifications?token=${encodeURIComponent(token)}`;
+  }
+
+  // Default: derive from window.location
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.hostname;
+  const port = (window.location.port === '5173' || window.location.port === '3000')
+    ? ':8000'
+    : (window.location.port ? `:${window.location.port}` : '');
+
+  return `${protocol}//${host}${port}/api/ws/notifications?token=${encodeURIComponent(token)}`;
+};
+
 export function useWebSocketNotification(onNotificationReceived) {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
@@ -12,19 +36,14 @@ export function useWebSocketNotification(onNotificationReceived) {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      // Backend FastAPI typically runs on port 8000 or same origin in production proxy
-      const port = window.location.port === '5173' || window.location.port === '3000' ? ':8000' : (window.location.port ? `:${window.location.port}` : '');
-      const wsUrl = `${protocol}//${host}${port}/api/ws/notifications?token=${encodeURIComponent(token)}`;
+      const wsUrl = getWsUrl(token);
 
       try {
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('[WebSocket Notification] Connected');
-          // Setup keep-alive ping every 30s
+          console.log('[WebSocket Notification] Connected to:', wsUrl.split('?')[0]);
           if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
@@ -49,11 +68,10 @@ export function useWebSocketNotification(onNotificationReceived) {
           console.warn('[WebSocket Notification] Error:', err);
         };
 
-        ws.onclose = () => {
-          console.log('[WebSocket Notification] Disconnected');
+        ws.onclose = (event) => {
+          console.log('[WebSocket Notification] Disconnected, code:', event.code);
           if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
           if (isMounted) {
-            // Attempt reconnect in 5 seconds
             reconnectTimeoutRef.current = setTimeout(() => {
               connect();
             }, 5000);
