@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import { projectApi, sprintApi, issueApi, userApi } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { StatusBadge, PriorityBadge, DeadlineBadge } from '../components/ui/Badge';
+import { StatusBadge, StatusColorBar, STATUS_META, PriorityBadge, DeadlineBadge } from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 import ManageProjectMembersModal from '../components/project/ManageProjectMembersModal';
@@ -425,7 +425,7 @@ export default function DashboardPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-app)', textAlign: 'left', color: 'var(--text-muted)' }}>
                       <th style={{ padding: '10px 14px', fontWeight: 800 }}>Issue Title</th>
-                      <th style={{ padding: '10px 14px', fontWeight: 800, width: 130 }}>Status</th>
+                      <th style={{ padding: '10px 14px', fontWeight: 800, width: 80 }}>Status</th>
                       <th style={{ padding: '10px 14px', fontWeight: 800, width: 110 }}>Priority</th>
                       <th style={{ padding: '10px 14px', fontWeight: 800, width: 110 }}>Created</th>
                     </tr>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                         <td style={{ padding: '12px 14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={issue.title}>
                           {issue.title}
                         </td>
-                        <td style={{ padding: '12px 14px' }}><StatusBadge status={issue.status} /></td>
+                        <td style={{ padding: '12px 14px' }}><StatusColorBar status={issue.status} /></td>
                         <td style={{ padding: '12px 14px' }}><PriorityBadge priority={issue.priority} /></td>
                         <td style={{ padding: '12px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{formatDate(issue.created_at)}</td>
                       </tr>
@@ -450,6 +450,50 @@ export default function DashboardPage() {
                 </table>
               </div>
             )}
+
+            {/* Status Legend */}
+            <div
+              style={{
+                marginTop: 18,
+                paddingTop: 14,
+                borderTop: '1px solid var(--border-color)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                fontSize: '0.75rem',
+              }}
+            >
+              <div style={{ fontWeight: 800, color: 'var(--text-main)', fontSize: '0.8rem' }}>
+                Status Legend:
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                {Object.entries(STATUS_META).map(([key, meta]) => (
+                  <div
+                    key={key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '3px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: meta.bg,
+                      border: `1px solid ${meta.color}30`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        backgroundColor: meta.color,
+                        display: 'inline-block',
+                      }}
+                    />
+                    <span style={{ fontWeight: 700, color: meta.color }}>{meta.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

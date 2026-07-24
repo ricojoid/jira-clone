@@ -12,9 +12,9 @@ import {
 export const STATUS_META = {
   todo: { label: 'To Do', className: 'badge-todo', color: '#64748b', bg: '#f1f5f9', icon: Clock },
   in_progress: { label: 'In Progress', className: 'badge-in_progress', color: '#2563eb', bg: '#eff6ff', icon: AlertCircle },
-  ready_to_review_fid: { label: 'Ready to Review FID', className: 'badge-ready_fid', color: '#7c3aed', bg: '#f5f3ff', icon: Clock },
-  fid_review: { label: 'FID Review', className: 'badge-fid_review', color: '#9333ea', bg: '#faf5ff', icon: AlertCircle },
-  ready_to_is_review: { label: 'Ready to IS Review', className: 'badge-ready_is', color: '#d97706', bg: '#fffbeb', icon: Clock },
+  ready_to_review_fid: { label: 'Ready to Review FID', className: 'badge-ready_fid', color: '#0284c7', bg: '#f0f9ff', icon: Clock },
+  fid_review: { label: 'FID Review', className: 'badge-fid_review', color: '#7c3aed', bg: '#f5f3ff', icon: AlertCircle },
+  ready_to_is_review: { label: 'Ready to IS Review', className: 'badge-ready_is', color: '#ea580c', bg: '#fff7ed', icon: Clock },
   is_review: { label: 'IS Review', className: 'badge-is_review', color: '#ca8a04', bg: '#fefce8', icon: AlertCircle },
   done: { label: 'Done', className: 'badge-done', color: '#16a34a', bg: '#f0fdf4', icon: CheckCircle2 },
 };
@@ -53,6 +53,31 @@ export function StatusBadge({ status }) {
       <Icon size={12} />
       {meta.label}
     </span>
+  );
+}
+
+export function StatusColorBar({ status }) {
+  const normKey = (status || 'todo').toLowerCase().replace(/\s+/g, '_');
+  const meta = STATUS_META[normKey] || STATUS_META[status] || { label: status || 'To Do', color: '#64748b' };
+
+  return (
+    <div
+      title={`Status: ${meta.label}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+      }}
+    >
+      <span
+        style={{
+          width: 44,
+          height: 12,
+          borderRadius: 6,
+          backgroundColor: meta.color,
+          display: 'inline-block',
+        }}
+      />
+    </div>
   );
 }
 
