@@ -12,6 +12,7 @@ import {
   Shield,
   User as UserIcon,
   Users,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { projectApi } from '../../api';
@@ -33,6 +34,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     { label: 'Backlog', icon: ListTodo, path: '/backlog' },
     { label: 'Phases / Sprints', icon: Zap, path: '/sprints' },
     { label: 'Issues', icon: CheckSquare, path: '/issues' },
+    { label: 'Minutes of Meeting', icon: FileText, path: '/mom' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
@@ -66,6 +68,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     let target = path;
     if (['/board', '/backlog', '/sprints', '/issues'].includes(path) && selectedProject) {
       target = `${path}/${selectedProject}`;
+    } else if (path === '/mom' && selectedProject) {
+      target = `/mom/project/${selectedProject}`;
     }
     navigate(target);
     if (onCloseMobile) onCloseMobile();

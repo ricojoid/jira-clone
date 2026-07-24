@@ -13,6 +13,9 @@ import BacklogPage from './pages/BacklogPage';
 import SprintsPage from './pages/SprintsPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminUserManagementPage from './pages/AdminUserManagementPage';
+import MoMPage from './pages/MoMPage';
+import CreateEditMoMPage from './pages/CreateEditMoMPage';
+import MoMDetailPage from './pages/MoMDetailPage';
 
 function App() {
   return (
@@ -44,6 +47,12 @@ function App() {
               <Route path="/issue/:issueId" element={<IssueDetailPage />} />
               <Route path="/backlog/:projectId" element={<BacklogPage />} />
               <Route path="/sprints/:projectId" element={<SprintsPage />} />
+              <Route path="/mom" element={<MoMPage />} />
+              <Route path="/mom/project/:projectId" element={<MoMPage />} />
+              <Route path="/mom/new" element={<CreateEditMoMPage />} />
+              <Route path="/mom/new/:projectId" element={<CreateEditMoMPage />} />
+              <Route path="/mom/view/:momId" element={<MoMDetailPage />} />
+              <Route path="/mom/edit/:momId" element={<CreateEditMoMPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/users" element={<AdminUserManagementPage />} />
             </Route>

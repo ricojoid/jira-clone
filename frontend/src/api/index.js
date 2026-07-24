@@ -140,4 +140,12 @@ export const getAttachmentUrl = (url) => {
   return cleanPath;
 };
 
+export const momApi = {
+  list: (params) => api.get('/moms', { params }),
+  get: (id) => api.get(`/moms/${id}`),
+  create: (data) => api.post('/moms', data),
+  update: (id, data) => api.put(`/moms/${id}`, data),
+  delete: (id) => api.delete(`/moms/${id}`),
+};
+
 export default api;
