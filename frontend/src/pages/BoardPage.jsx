@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Filter, Calendar, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -24,7 +24,7 @@ const DEFAULT_COLUMNS = [
 
 export default function BoardPage() {
   const { projectId } = useParams();
-  const { isPM } = useAuth();
+  const { isPM, user } = useAuth();
 
   const [project, setProject] = useState(null);
   const [board, setBoard] = useState(null);
@@ -33,12 +33,23 @@ export default function BoardPage() {
   const [assignees, setAssignees] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters (default to empty string so all tasks show by default)
+  // Filters (default to current user ID for regular members, empty for PMs)
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterDueDateFrom, setFilterDueDateFrom] = useState('');
   const [filterDueDateTo, setFilterDueDateTo] = useState('');
+
+  const defaultFilterSet = useRef(false);
+
+  useEffect(() => {
+    if (user && !defaultFilterSet.current) {
+      defaultFilterSet.current = true;
+      if (!isPM) {
+        setFilterAssignee(String(user.id));
+      }
+    }
+  }, [user, isPM]);
 
   // Modals
   const [selectedIssueId, setSelectedIssueId] = useState(null);

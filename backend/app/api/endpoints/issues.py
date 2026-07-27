@@ -50,6 +50,26 @@ def _is_pm_or_admin_or_owner(user: User, project: Optional[Project] = None) -> b
     return False
 
 
+def _has_project_access(user: User, project: Optional[Project], db: Session) -> bool:
+    if not project:
+        return False
+    user_role = (getattr(user, "role", "") or "").lower()
+    if user_role in ["super_admin", "super admin", "superadmin", "admin"]:
+        return True
+    if project.owner_id == user.id:
+        return True
+    from app.models.project import ProjectMember
+    member = (
+        db.query(ProjectMember)
+        .filter(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == user.id,
+        )
+        .first()
+    )
+    return member is not None
+
+
 @router.get("/project/{project_id}", response_model=List[IssueBrief])
 def list_issues(
     project_id: int,
@@ -65,17 +85,17 @@ def list_issues(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
+    if not _has_project_access(current_user, project, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Anda tidak memiliki akses ke project ini",
+        )
+
     query = (
         db.query(Issue)
         .options(joinedload(Issue.assignee), joinedload(Issue.labels))
         .filter(Issue.project_id == project_id)
     )
-
-    # Restriction: Regular members can ONLY view tasks assigned to them OR created by them
-    if not _is_pm_or_admin_or_owner(current_user, project):
-        query = query.filter(
-            or_(Issue.assignee_id == current_user.id, Issue.reporter_id == current_user.id)
-        )
 
     if status:
         query = query.filter(Issue.status == status)
@@ -102,12 +122,13 @@ def get_backlog(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    query = db.query(Issue).filter(Issue.project_id == project_id, Issue.sprint_id.is_(None))
-
-    if not _is_pm_or_admin_or_owner(current_user, project):
-        query = query.filter(
-            or_(Issue.assignee_id == current_user.id, Issue.reporter_id == current_user.id)
+    if not _has_project_access(current_user, project, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Anda tidak memiliki akses ke project ini",
         )
+
+    query = db.query(Issue).filter(Issue.project_id == project_id, Issue.sprint_id.is_(None))
 
     return (
         query.order_by(Issue.position)
@@ -137,13 +158,11 @@ def get_issue(
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
 
-    # Regular member access control: can only view tasks assigned to them or created by them
-    if not _is_pm_or_admin_or_owner(current_user, issue.project):
-        if issue.assignee_id != current_user.id and issue.reporter_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Anggota hanya dapat melihat task yang di-assign kepada mereka",
-            )
+    if not _has_project_access(current_user, issue.project, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Anda tidak memiliki akses ke project ini",
+        )
 
     return issue
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -33,7 +33,7 @@ export default function IssuesPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isPM } = useAuth();
+  const { isPM, user } = useAuth();
 
   const [issues, setIssues] = useState([]);
   const [project, setProject] = useState(null);
@@ -51,6 +51,17 @@ export default function IssuesPage() {
   const [sprintFilter, setSprintFilter] = useState('');
   const [filterDueDateFrom, setFilterDueDateFrom] = useState('');
   const [filterDueDateTo, setFilterDueDateTo] = useState('');
+
+  const defaultFilterSet = useRef(false);
+
+  useEffect(() => {
+    if (user && !defaultFilterSet.current) {
+      defaultFilterSet.current = true;
+      if (!isPM) {
+        setAssigneeFilter(String(user.id));
+      }
+    }
+  }, [user, isPM]);
 
   // Sorting
   const [sortBy, setSortBy] = useState('created_at');
