@@ -12,6 +12,8 @@ import {
   Layers,
   Users,
   XCircle,
+  Search,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { projectApi, sprintApi, issueApi, userApi } from '../api';
@@ -52,6 +54,8 @@ export default function DashboardPage() {
   const [recentIssues, setRecentIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [titleFilter, setTitleFilter] = useState('');
+
   // Modal State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', key: '', description: '', sdlc_type: 'scrum' });
@@ -59,6 +63,27 @@ export default function DashboardPage() {
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [creating, setCreating] = useState(false);
   const [activeMemberProjectId, setActiveMemberProjectId] = useState(null);
+
+  const filteredProjects = useMemo(() => {
+    if (!titleFilter.trim()) return projects;
+    const q = titleFilter.trim().toLowerCase();
+    return projects.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.key?.toLowerCase().includes(q)
+    );
+  }, [projects, titleFilter]);
+
+  const filteredRecentIssues = useMemo(() => {
+    if (!titleFilter.trim()) return recentIssues;
+    const q = titleFilter.trim().toLowerCase();
+    return recentIssues.filter(
+      (i) =>
+        i.title?.toLowerCase().includes(q) ||
+        (i.issue_key || i.key)?.toLowerCase().includes(q)
+    );
+  }, [recentIssues, titleFilter]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -172,6 +197,16 @@ export default function DashboardPage() {
     );
   }, [recentIssues, user]);
 
+  const filteredMyAssignedIssues = useMemo(() => {
+    if (!titleFilter.trim()) return myAssignedIssues;
+    const q = titleFilter.trim().toLowerCase();
+    return myAssignedIssues.filter(
+      (i) =>
+        i.title?.toLowerCase().includes(q) ||
+        (i.issue_key || i.key)?.toLowerCase().includes(q)
+    );
+  }, [myAssignedIssues, titleFilter]);
+
   const totalTasks = useMemo(() => {
     return Object.values(issuesMap).reduce((acc, list) => {
       return acc + list.filter((i) => (i.status ?? '').toLowerCase() !== 'cancelled').length;
@@ -227,11 +262,54 @@ export default function DashboardPage() {
           </h1>
         </div>
 
-        {isPM && (
-          <Button variant="primary" icon={Plus} onClick={() => setDialogOpen(true)}>
-            Create New Project
-          </Button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {/* Title Search Filter Input */}
+          <div style={{ position: 'relative', width: 260 }}>
+            <Search
+              size={16}
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)',
+              }}
+            />
+            <input
+              className="form-input"
+              placeholder="Filter by title..."
+              value={titleFilter}
+              onChange={(e) => setTitleFilter(e.target.value)}
+              style={{ paddingLeft: 36, paddingRight: titleFilter ? 32 : 12, height: 38, fontSize: '0.85rem', backgroundColor: '#ffffff' }}
+            />
+            {titleFilter && (
+              <button
+                type="button"
+                onClick={() => setTitleFilter('')}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {isPM && (
+            <Button variant="primary" icon={Plus} onClick={() => setDialogOpen(true)}>
+              Create New Project
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Metrics Stat Cards (Gapless Grid) */}
@@ -324,7 +402,7 @@ export default function DashboardPage() {
               </h3>
             </div>
 
-            {projects.length === 0 ? (
+            {filteredProjects.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                 <FolderKanban size={36} style={{ marginBottom: 12, opacity: 0.4 }} />
                 <div style={{ fontWeight: 700 }}>No projects found</div>
@@ -336,7 +414,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-                {projects.map((p) => {
+                {filteredProjects.map((p) => {
                   const projId = p.id || p._id;
                   const issues = issuesMap[projId] || [];
                   const activeIssues = issues.filter((i) => (i.status ?? '').toLowerCase() !== 'cancelled');
@@ -436,11 +514,11 @@ export default function DashboardPage() {
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>Recent Issues Activity</h3>
               </div>
               <span className="badge" style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
-                {recentIssues.length} recent
+                {filteredRecentIssues.length} recent
               </span>
             </div>
 
-            {recentIssues.length === 0 ? (
+            {filteredRecentIssues.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 No recent activity recorded.
               </div>
@@ -456,7 +534,7 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentIssues.map((issue) => (
+                    {filteredRecentIssues.map((issue) => (
                       <tr
                         key={issue.id || issue._id}
                         onClick={() => navigate(`/issue/${issue.id || issue._id}`)}
@@ -560,13 +638,13 @@ export default function DashboardPage() {
               <h3 style={{ fontSize: '1.05rem', fontWeight: 800 }}>Assigned to Me</h3>
             </div>
 
-            {myAssignedIssues.length === 0 ? (
+            {filteredMyAssignedIssues.length === 0 ? (
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
                 No pending tasks assigned to you.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {myAssignedIssues.slice(0, 5).map((issue) => (
+                {filteredMyAssignedIssues.slice(0, 5).map((issue) => (
                   <div
                     key={issue.id || issue._id}
                     onClick={() => navigate(`/issue/${issue.id || issue._id}`)}

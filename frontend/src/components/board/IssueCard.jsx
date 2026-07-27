@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { TypeIcon, PriorityBadge, DeadlineBadge } from '../ui/Badge';
+import { TypeIcon, TypeBadge, PriorityBadge, DeadlineBadge } from '../ui/Badge';
 import Avatar from '../ui/Avatar';
 import { getDeadlineStatus } from '../../utils/deadline';
 
@@ -37,6 +37,16 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
     ? (rawSprintName.includes(' - ') ? rawSprintName.split(' - ')[0].trim() : rawSprintName)
     : null;
 
+  const raisedByName = issue.raised_by_name || issue.raised_by?.full_name || issue.raised_by?.username || '';
+  const rawRaisedDate = issue.raised_date || issue.created_at;
+  const raisedDateFormatted = (() => {
+    if (!rawRaisedDate) return null;
+    const d = new Date(rawRaisedDate);
+    if (isNaN(d.getTime())) return null;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+  })();
+
   return (
     <div
       ref={combinedRef}
@@ -60,46 +70,45 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
       {...attributes}
       {...listeners}
     >
-      {/* Badges: Phase, Deadline & Labels */}
-      {((issue.labels && issue.labels.length > 0) || dueDate || phaseCode) && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8, alignItems: 'center' }}>
-          {phaseCode && (
+      {/* Badges: Issue Type, Phase, Deadline & Labels */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8, alignItems: 'center' }}>
+        <TypeBadge type={issue.issue_type || issue.type} />
+        {phaseCode && (
+          <span
+            className="badge"
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 800,
+              backgroundColor: '#fef3c7',
+              color: '#b45309',
+              border: '1px solid #fcd34d',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {phaseCode}
+          </span>
+        )}
+        {dueDate && (
+          <DeadlineBadge dueDate={dueDate} status={issue.status} compact />
+        )}
+        {issue.labels && issue.labels.map((label) => {
+          const labelName = typeof label === 'string' ? label : label.name;
+          return (
             <span
+              key={labelName}
               className="badge"
               style={{
-                fontSize: '0.65rem',
-                fontWeight: 800,
-                backgroundColor: '#fef3c7',
-                color: '#b45309',
-                border: '1px solid #fcd34d',
-                letterSpacing: '0.04em',
+                fontSize: '0.675rem',
+                backgroundColor: 'var(--primary-light)',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary-border)',
               }}
             >
-              {phaseCode}
+              {labelName}
             </span>
-          )}
-          {dueDate && (
-            <DeadlineBadge dueDate={dueDate} status={issue.status} compact />
-          )}
-          {issue.labels && issue.labels.map((label) => {
-            const labelName = typeof label === 'string' ? label : label.name;
-            return (
-              <span
-                key={labelName}
-                className="badge"
-                style={{
-                  fontSize: '0.675rem',
-                  backgroundColor: 'var(--primary-light)',
-                  color: 'var(--primary)',
-                  border: '1px solid var(--primary-border)',
-                }}
-              >
-                {labelName}
-              </span>
-            );
-          })}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* Issue Title */}
       <div
@@ -108,7 +117,7 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
           fontSize: '0.875rem',
           color: 'var(--text-main)',
           lineHeight: 1.4,
-          marginBottom: 12,
+          marginBottom: (raisedByName || raisedDateFormatted) ? 8 : 12,
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
@@ -117,6 +126,33 @@ export const IssueCardContent = forwardRef(function IssueCardContent(
       >
         {title}
       </div>
+
+      {/* Raised Info */}
+      {(raisedByName || raisedDateFormatted) && (
+        <div
+          style={{
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            marginBottom: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          {raisedByName && (
+            <div>
+              <span>Raised By : </span>
+              <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{raisedByName}</span>
+            </div>
+          )}
+          {raisedDateFormatted && (
+            <div>
+              <span>Raised Date : </span>
+              <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{raisedDateFormatted}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer Row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -53,6 +53,40 @@ def _auto_migrate_and_seed():
                         conn.execute(text("ALTER TABLE comments ADD COLUMN attachment_url VARCHAR(500)"))
                 print("Auto-migrated comments table: added attachment_url column")
 
+        if "issues" in tables:
+            issue_cols = {c["name"]: c for c in inspector.get_columns("issues")}
+            with engine.begin() as conn:
+                if "raised_by_id" not in issue_cols:
+                    try:
+                        conn.execute(text("ALTER TABLE issues ADD raised_by_id INTEGER"))
+                    except Exception:
+                        conn.execute(text("ALTER TABLE issues ADD COLUMN raised_by_id INTEGER"))
+                    print("Auto-migrated issues table: added raised_by_id column")
+                
+                if "raised_date" not in issue_cols:
+                    try:
+                        conn.execute(text("ALTER TABLE issues ADD raised_date DATETIME2"))
+                    except Exception:
+                        conn.execute(text("ALTER TABLE issues ADD COLUMN raised_date DATETIME2"))
+                    print("Auto-migrated issues table: added raised_date column")
+                else:
+                    # Fix MS SQL Server TIMESTAMP (rowversion) type if present
+                    col_type_str = str(issue_cols["raised_date"]["type"]).upper()
+                    if "TIMESTAMP" in col_type_str or "BINARY" in col_type_str:
+                        try:
+                            conn.execute(text("ALTER TABLE issues DROP COLUMN raised_date"))
+                            conn.execute(text("ALTER TABLE issues ADD raised_date DATETIME2 NULL"))
+                            print("Auto-fixed raised_date column type to DATETIME2")
+                        except Exception as e:
+                            print("Failed to auto-fix raised_date column type:", e)
+
+                if "raised_by_name" not in issue_cols:
+                    try:
+                        conn.execute(text("ALTER TABLE issues ADD raised_by_name VARCHAR(255)"))
+                    except Exception:
+                        conn.execute(text("ALTER TABLE issues ADD COLUMN raised_by_name VARCHAR(255)"))
+                    print("Auto-migrated issues table: added raised_by_name column")
+
         if "board_columns" in tables and "boards" in tables:
             from app.models.board import Board, BoardColumn
             db = SessionLocal()

@@ -58,8 +58,12 @@ class IssueBase(BaseModel):
     description: Optional[str] = None
     issue_type: Optional[str] = "task"
     priority: Optional[str] = "medium"
+    status: Optional[str] = "todo"
     story_points: Optional[int] = None
     due_date: Optional[datetime] = None
+    raised_by_id: Optional[int] = None
+    raised_by_name: Optional[str] = None
+    raised_date: Optional[datetime] = None
 
 
 class IssueCreate(IssueBase):
@@ -78,10 +82,14 @@ class IssueUpdate(BaseModel):
     priority: Optional[str] = None
     story_points: Optional[int] = None
     assignee_id: Optional[int] = None
+    reporter_id: Optional[int] = None
+    raised_by_id: Optional[int] = None
+    raised_by_name: Optional[str] = None
     sprint_id: Optional[int] = None
     parent_id: Optional[int] = None
     position: Optional[int] = None
     due_date: Optional[datetime] = None
+    raised_date: Optional[datetime] = None
     label_ids: Optional[List[int]] = None
 
 
@@ -97,10 +105,25 @@ class IssueBrief(BaseModel):
     project_id: Optional[int] = None
     sprint_id: Optional[int] = None
     assignee_id: Optional[int] = None
+    reporter_id: Optional[int] = None
+    raised_by_id: Optional[int] = None
+    raised_by_name: Optional[str] = None
     due_date: Optional[datetime] = None
+    raised_date: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     assignee: Optional[UserBrief] = None
+    reporter: Optional[UserBrief] = None
+    raised_by: Optional[UserBrief] = None
     sprint: Optional[SprintBrief] = None
     labels: Optional[List[LabelResponse]] = []
+
+    @field_serializer("created_at", "due_date", "raised_date")
+    def serialize_brief_datetime(self, dt: datetime, _info):
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     class Config:
         from_attributes = True
@@ -114,20 +137,23 @@ class IssueResponse(IssueBase):
     project_id: int
     assignee_id: Optional[int] = None
     reporter_id: Optional[int] = None
+    raised_by_id: Optional[int] = None
     sprint_id: Optional[int] = None
     parent_id: Optional[int] = None
     due_date: Optional[datetime] = None
+    raised_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     assignee: Optional[UserBrief] = None
     reporter: Optional[UserBrief] = None
+    raised_by: Optional[UserBrief] = None
     sprint: Optional[SprintBrief] = None
     labels: Optional[List[LabelResponse]] = []
     comments: Optional[List[CommentResponse]] = []
     children: Optional[List[IssueBrief]] = []
     parent: Optional[IssueBrief] = None
 
-    @field_serializer("created_at", "updated_at", "due_date")
+    @field_serializer("created_at", "updated_at", "due_date", "raised_date")
     def serialize_issue_datetime(self, dt: datetime, _info):
         if dt is None:
             return None

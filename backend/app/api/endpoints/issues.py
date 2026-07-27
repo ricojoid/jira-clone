@@ -1,6 +1,7 @@
 import os
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from app.core.database import get_db
@@ -77,7 +78,13 @@ def list_issues(
     issue_type: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
     assignee_id: Optional[int] = Query(None),
+    reporter_id: Optional[int] = Query(None),
+    raised_by_id: Optional[int] = Query(None),
+    raised_by_name: Optional[str] = Query(None),
     sprint_id: Optional[int] = Query(None),
+    title: Optional[str] = Query(None),
+    raised_date_from: Optional[str] = Query(None),
+    raised_date_to: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -93,7 +100,7 @@ def list_issues(
 
     query = (
         db.query(Issue)
-        .options(joinedload(Issue.assignee), joinedload(Issue.labels))
+        .options(joinedload(Issue.assignee), joinedload(Issue.reporter), joinedload(Issue.raised_by), joinedload(Issue.labels))
         .filter(Issue.project_id == project_id)
     )
 
@@ -105,8 +112,38 @@ def list_issues(
         query = query.filter(Issue.priority == priority)
     if assignee_id:
         query = query.filter(Issue.assignee_id == assignee_id)
+    target_raised_id = raised_by_id or reporter_id
+    if target_raised_id:
+        query = query.filter((Issue.raised_by_id == target_raised_id) | (Issue.reporter_id == target_raised_id))
+    if raised_by_name:
+        query = query.filter(
+            or_(
+                Issue.raised_by_name.ilike(f"%{raised_by_name}%"),
+                Issue.raised_by.has(User.full_name.ilike(f"%{raised_by_name}%")),
+                Issue.reporter.has(User.full_name.ilike(f"%{raised_by_name}%")),
+            )
+        )
     if sprint_id:
         query = query.filter(Issue.sprint_id == sprint_id)
+    if title:
+        query = query.filter(Issue.title.ilike(f"%{title}%"))
+
+    if raised_date_from:
+        try:
+            dt_from = datetime.fromisoformat(raised_date_from.replace('Z', '+00:00'))
+            query = query.filter(func.coalesce(Issue.raised_date, Issue.created_at) >= dt_from)
+        except Exception:
+            pass
+    if raised_date_to:
+        try:
+            val = raised_date_to.strip()
+            if len(val) == 10:
+                dt_to = datetime.fromisoformat(f"{val}T23:59:59")
+            else:
+                dt_to = datetime.fromisoformat(val.replace('Z', '+00:00'))
+            query = query.filter(func.coalesce(Issue.raised_date, Issue.created_at) <= dt_to)
+        except Exception:
+            pass
 
     return query.order_by(Issue.position).all()
 
@@ -147,6 +184,7 @@ def get_issue(
         .options(
             joinedload(Issue.assignee),
             joinedload(Issue.reporter),
+            joinedload(Issue.raised_by),
             joinedload(Issue.labels),
             joinedload(Issue.comments).joinedload(Comment.author),
             joinedload(Issue.children),
@@ -282,11 +320,12 @@ def create_issue(
     db: Session = Depends(get_db),
 ):
     issue_key = _generate_issue_key(db, issue_data.project_id)
+    target_status = issue_data.status or "todo"
 
-    # Get max position
+    # Get max position in target status
     max_pos = (
         db.query(Issue.position)
-        .filter(Issue.project_id == issue_data.project_id, Issue.status == "todo")
+        .filter(Issue.project_id == issue_data.project_id, Issue.status == target_status)
         .order_by(Issue.position.desc())
         .first()
     )
@@ -294,6 +333,13 @@ def create_issue(
 
     label_ids = issue_data.label_ids or []
     issue_dict = issue_data.model_dump(exclude={"label_ids"})
+    issue_dict["status"] = target_status
+    if not issue_dict.get("raised_by_id"):
+        issue_dict["raised_by_id"] = current_user.id
+    if not issue_dict.get("raised_by_name"):
+        issue_dict["raised_by_name"] = current_user.full_name or current_user.username
+    if not issue_dict.get("raised_date"):
+        issue_dict["raised_date"] = datetime.now(timezone.utc)
 
     issue = Issue(
         **issue_dict,

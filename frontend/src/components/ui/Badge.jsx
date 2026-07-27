@@ -89,6 +89,32 @@ export function TypeIcon({ type, size = 16 }) {
   return <Icon size={size} style={{ color: meta.color }} />;
 }
 
+export function TypeBadge({ type }) {
+  const normType = (type || 'task').toLowerCase();
+  const meta = TYPE_META[normType] || TYPE_META.task;
+  const Icon = meta.icon;
+
+  return (
+    <span
+      className="badge"
+      style={{
+        backgroundColor: `${meta.color}15`,
+        color: meta.color,
+        border: `1px solid ${meta.color}30`,
+        fontWeight: 700,
+        fontSize: '0.65rem',
+        textTransform: 'capitalize',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+      }}
+    >
+      <Icon size={11} />
+      {meta.label}
+    </span>
+  );
+}
+
 export function PriorityBadge({ priority }) {
   const meta = PRIORITY_META[priority] || PRIORITY_META.medium;
 

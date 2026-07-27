@@ -28,6 +28,7 @@ export default function IssueDetailPage() {
   const [titleDraft, setTitleDraft] = useState('');
   const [descDraft, setDescDraft] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
+  const [raisedByDraft, setRaisedByDraft] = useState('');
 
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
@@ -43,6 +44,7 @@ export default function IssueDetailPage() {
       setIssue(issueData);
       setTitleDraft(issueData.title || '');
       setDescDraft(issueData.description || '');
+      setRaisedByDraft(issueData.raised_by_name ?? (issueData.raised_by?.full_name || issueData.raised_by?.username || ''));
       setComments(issueData.comments || []);
 
       const actualProjectId = issueData.project_id;
@@ -566,6 +568,35 @@ export default function IssueDetailPage() {
                 value={formatDateForDateInput(issue.due_date)}
                 onClick={(e) => { try { e.target.showPicker(); } catch {} }}
                 onChange={(e) => updateField('due_date', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Raised By</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="e.g. Client A, Pak Budi, QA Team"
+                value={raisedByDraft}
+                onChange={(e) => setRaisedByDraft(e.target.value)}
+                onBlur={() => {
+                  const currentVal = issue.raised_by_name ?? (issue.raised_by?.full_name || issue.raised_by?.username || '');
+                  if (raisedByDraft !== currentVal) {
+                    updateField('raised_by_name', raisedByDraft);
+                  }
+                }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Raised Date</label>
+              <input
+                className="form-input"
+                type="date"
+                style={{ cursor: 'pointer' }}
+                value={formatDateForDateInput(issue.raised_date || issue.created_at)}
+                onClick={(e) => { try { e.target.showPicker(); } catch {} }}
+                onChange={(e) => updateField('raised_date', e.target.value ? new Date(e.target.value).toISOString() : null)}
               />
             </div>
 

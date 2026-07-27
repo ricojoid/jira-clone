@@ -5,6 +5,8 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Avatar from '../ui/Avatar';
 import { TYPE_META, PRIORITY_META, STATUS_META, TypeIcon } from '../ui/Badge';
+import { useAuth } from '../../context/AuthContext';
+import { formatDateForDateInput } from '../../utils/deadline';
 
 const WATERFALL_DEFAULT_PHASES = [
   { code: 'UR', name: 'UR' },
@@ -17,15 +19,15 @@ const WATERFALL_DEFAULT_PHASES = [
   { code: 'MA', name: 'MA' },
 ];
 
-import { formatDateForDateInput } from '../../utils/deadline';
-
-const getInitialForm = () => ({
+const getInitialForm = (user) => ({
   title: '',
   description: '',
   type: 'task',
   priority: 'medium',
   status: 'todo',
   assignee_id: '',
+  raised_by_name: user?.full_name || user?.username || '',
+  raised_date: formatDateForDateInput(new Date()),
   sprint_id: '',
   story_points: '',
   due_date: formatDateForDateInput(new Date()),
@@ -33,7 +35,8 @@ const getInitialForm = () => ({
 });
 
 export default function CreateIssueDialog({ open, onClose, projectId, onCreated, parentId }) {
-  const [form, setForm] = useState(getInitialForm);
+  const { user } = useAuth();
+  const [form, setForm] = useState(() => getInitialForm(user));
   const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -89,10 +92,11 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
 
   useEffect(() => {
     if (!open) {
-      setForm(parentId ? { ...getInitialForm(), type: 'subtask' } : getInitialForm());
+      const init = getInitialForm(user);
+      setForm(parentId ? { ...init, type: 'subtask' } : init);
       setTagInput('');
     }
-  }, [open, parentId]);
+  }, [open, parentId, user]);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -145,10 +149,13 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         description: form.description.trim(),
         issue_type: form.type,
         priority: form.priority,
+        status: form.status || 'todo',
         project_id: Number(projectId),
       };
 
       if (form.assignee_id) payload.assignee_id = Number(form.assignee_id);
+      if (form.raised_by_name?.trim()) payload.raised_by_name = form.raised_by_name.trim();
+      if (form.raised_date) payload.raised_date = new Date(form.raised_date).toISOString();
       if (form.sprint_id) {
         if (String(form.sprint_id).startsWith('virtual_')) {
           const code = String(form.sprint_id).replace('virtual_', '');
@@ -276,6 +283,19 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         </div>
 
         <div className="form-group">
+          <label className="form-label">Raised By</label>
+          <input
+            type="text"
+            className="form-input"
+            placeholder="e.g. Client A, Pak Budi, QA Team"
+            value={form.raised_by_name}
+            onChange={handleChange('raised_by_name')}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="form-group">
           <label className="form-label">{isWaterfall ? 'Phase' : 'Sprint'}</label>
           <select className="form-select" value={form.sprint_id} onChange={handleChange('sprint_id')}>
             <option value="">{isWaterfall ? 'No Phase (Backlog)' : 'No Sprint (Backlog)'}</option>
@@ -285,6 +305,18 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Raised Date</label>
+          <input
+            className="form-input"
+            type="date"
+            style={{ cursor: 'pointer' }}
+            value={form.raised_date}
+            onClick={(e) => { try { e.target.showPicker(); } catch {} }}
+            onChange={handleChange('raised_date')}
+          />
         </div>
       </div>
 

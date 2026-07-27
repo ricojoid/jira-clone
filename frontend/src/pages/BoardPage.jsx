@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Filter, Calendar, FileSpreadsheet } from 'lucide-react';
+import { Plus, Filter, Calendar, FileSpreadsheet, Search, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { boardApi, issueApi, userApi, projectApi } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +35,10 @@ export default function BoardPage() {
   const [loading, setLoading] = useState(true);
 
   // Filters (default to current user ID for regular members, empty for PMs)
+  const [filterTitle, setFilterTitle] = useState('');
+  const [filterRaisedBy, setFilterRaisedBy] = useState('');
+  const [filterRaisedDateFrom, setFilterRaisedDateFrom] = useState('');
+  const [filterRaisedDateTo, setFilterRaisedDateTo] = useState('');
   const [filterAssignee, setFilterAssignee] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -61,14 +65,43 @@ export default function BoardPage() {
     try {
       setLoading(true);
 
-      const projRes = await projectApi.get(projectId);
-      const projData = projRes.data;
-      setProject(projData);
+      const [projRes, boardRes, issueRes, membersRes] = await Promise.all([
+        projectApi.get(projectId).catch((err) => {
+          console.error('Failed fetching project details:', err);
+          return { data: null };
+        }),
+        boardApi.listByProject(projectId).catch((err) => {
+          console.error('Failed fetching boards:', err);
+          return { data: [] };
+        }),
+        issueApi
+          .listByProject(projectId, {
+            // Convert assignee filter to a number if present, as the backend expects an integer.
+            assignee_id: filterAssignee ? Number(filterAssignee) : undefined,
+            priority: filterPriority || undefined,
+            issue_type: filterType || undefined,
+            title: filterTitle || undefined,
+            raised_by_name: filterRaisedBy || undefined,
+            raised_date_from: filterRaisedDateFrom || undefined,
+            raised_date_to: filterRaisedDateTo || undefined,
+          })
+          .catch((err) => {
+            console.error('Failed fetching board issues:', err);
+            return { data: [] };
+          }),
+        projectApi.listMembers(projectId).catch((err) => {
+          console.error('Failed fetching project members:', err);
+          return { data: [] };
+        }),
+      ]);
 
-      const boardRes = await boardApi.listByProject(projectId);
+      if (projRes.data) {
+        setProject(projRes.data);
+      }
+
       const boardData = Array.isArray(boardRes.data) ? boardRes.data[0] : boardRes.data;
 
-      if (boardData && boardData.columns && boardData.columns.length >= 7) {
+      if (boardData && boardData.columns && boardData.columns.length > 0) {
         setBoard(boardData);
         let normColumns = boardData.columns.map((col) => {
           let status = col.status;
@@ -79,16 +112,21 @@ export default function BoardPage() {
           return { ...col, status: status || 'todo' };
         });
 
-        const hasCancelled = normColumns.some((c) => (c.status || '').toLowerCase() === 'cancelled');
-        if (!hasCancelled) {
-          normColumns.push({
-            id: 'cancelled',
-            name: 'Cancelled',
-            status: 'cancelled',
-            color: '#ef4444',
-            position: normColumns.length,
-          });
-        }
+        // Ensure all default status columns exist
+        DEFAULT_COLUMNS.forEach((defCol) => {
+          const exists = normColumns.some(
+            (c) => (c.status || '').toLowerCase() === defCol.status
+          );
+          if (!exists) {
+            normColumns.push({
+              id: defCol.id,
+              name: defCol.name,
+              status: defCol.status,
+              color: defCol.color,
+              position: normColumns.length,
+            });
+          }
+        });
 
         setColumns(normColumns);
       } else {
@@ -96,14 +134,7 @@ export default function BoardPage() {
         setColumns(DEFAULT_COLUMNS);
       }
 
-      const issueRes = await issueApi.listByProject(projectId, {
-        assignee_id: filterAssignee || undefined,
-        priority: filterPriority || undefined,
-        issue_type: filterType || undefined,
-      });
       setIssues(issueRes.data?.issues ?? issueRes.data ?? []);
-
-      const membersRes = await projectApi.listMembers(projectId).catch(() => ({ data: [] }));
       setAssignees(membersRes.data || []);
     } catch (err) {
       console.error('Failed to fetch board data:', err);
@@ -111,7 +142,7 @@ export default function BoardPage() {
     } finally {
       setLoading(false);
     }
-  }, [projectId, filterAssignee, filterPriority, filterType]);
+  }, [projectId, filterAssignee, filterPriority, filterType, filterTitle, filterRaisedBy, filterRaisedDateFrom, filterRaisedDateTo]);
 
   useEffect(() => {
     fetchBoardData();
@@ -204,6 +235,10 @@ export default function BoardPage() {
   };
 
   const clearFilters = () => {
+    setFilterTitle('');
+    setFilterRaisedBy('');
+    setFilterRaisedDateFrom('');
+    setFilterRaisedDateTo('');
     setFilterAssignee('');
     setFilterPriority('');
     setFilterType('');
@@ -211,7 +246,16 @@ export default function BoardPage() {
     setFilterDueDateTo('');
   };
 
-  const hasActiveFilters = filterAssignee || filterPriority || filterType || filterDueDateFrom || filterDueDateTo;
+  const hasActiveFilters =
+    filterTitle ||
+    filterRaisedBy ||
+    filterRaisedDateFrom ||
+    filterRaisedDateTo ||
+    filterAssignee ||
+    filterPriority ||
+    filterType ||
+    filterDueDateFrom ||
+    filterDueDateTo;
 
   if (loading && !project) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Loading board...</div>;
@@ -261,89 +305,150 @@ export default function BoardPage() {
       <div
         className="card"
         style={{
-          padding: '10px 16px',
+          padding: '12px 18px',
           display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flexWrap: 'wrap',
+          flexDirection: 'column',
+          gap: 10,
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.825rem' }}>
-          <Filter size={15} />
-          <span style={{ fontWeight: 600 }}>Filter:</span>
+        {/* Row 1: Search Inputs & Dropdowns */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 700, paddingRight: 4 }}>
+            <Filter size={16} />
+            <span>Filter</span>
+          </div>
+
+          {/* Search Title Input */}
+          <div style={{ position: 'relative', width: 170 }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Search title..."
+              value={filterTitle}
+              onChange={(e) => setFilterTitle(e.target.value)}
+              style={{ paddingLeft: 30, height: 34, fontSize: '0.8rem' }}
+            />
+          </div>
+
+          {/* Search Raised By Input */}
+          <div style={{ position: 'relative', width: 160 }}>
+            <User size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Raised by..."
+              value={filterRaisedBy}
+              onChange={(e) => setFilterRaisedBy(e.target.value)}
+              style={{ paddingLeft: 30, height: 34, fontSize: '0.8rem' }}
+            />
+          </div>
+
+          <select
+            className="form-select"
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+            style={{ width: 'auto', minWidth: 140, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
+          >
+            <option value="">All Assignees</option>
+            {assignees
+              .filter((m) => {
+                const u = m.user || m;
+                return !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase());
+              })
+              .map((m) => {
+                const u = m.user || m;
+                return (
+                  <option key={u.id || u._id} value={u.id || u._id}>
+                    {u.full_name || u.name || u.username}
+                  </option>
+                );
+              })}
+          </select>
+
+          <select
+            className="form-select"
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            style={{ width: 'auto', minWidth: 125, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
+          >
+            <option value="">All Priorities</option>
+            {['lowest', 'low', 'medium', 'high', 'highest'].map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+
+          <select
+            className="form-select"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            style={{ width: 'auto', minWidth: 110, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
+          >
+            <option value="">All Types</option>
+            {['task', 'bug', 'story', 'epic'].map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} style={{ marginLeft: 'auto', height: 34 }}>
+              Clear All Filters
+            </Button>
+          )}
         </div>
 
-        <select
-          className="form-select"
-          value={filterAssignee}
-          onChange={(e) => setFilterAssignee(e.target.value)}
-          style={{ width: 'auto', minWidth: 155, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
+        {/* Row 2: Date Range Grouping */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+            paddingTop: 8,
+            borderTop: '1px dashed var(--border-color)',
+            fontSize: '0.8rem',
+          }}
         >
-          <option value="">All Assignees</option>
-          {assignees
-            .filter((m) => {
-              const u = m.user || m;
-              return !['super_admin', 'super admin', 'superadmin', 'admin'].includes((u.role || '').toLowerCase());
-            })
-            .map((m) => {
-              const u = m.user || m;
-              return (
-                <option key={u.id || u._id} value={u.id || u._id}>
-                  {u.full_name || u.name || u.username}
-                </option>
-              );
-            })}
-        </select>
+          {/* Raised Date Range */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
+            <Calendar size={14} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Raised Date:</span>
+            <DateFilterInput
+              value={filterRaisedDateFrom}
+              onChange={(e) => setFilterRaisedDateFrom(e.target.value)}
+              placeholder="From: --/--/----"
+            />
+            <span>to</span>
+            <DateFilterInput
+              value={filterRaisedDateTo}
+              onChange={(e) => setFilterRaisedDateTo(e.target.value)}
+              placeholder="To: --/--/----"
+            />
+          </div>
 
-        <select
-          className="form-select"
-          value={filterPriority}
-          onChange={(e) => setFilterPriority(e.target.value)}
-          style={{ width: 'auto', minWidth: 135, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
-        >
-          <option value="">All Priorities</option>
-          {['lowest', 'low', 'medium', 'high', 'highest'].map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
+          <div style={{ width: 1, height: 18, backgroundColor: 'var(--border-color)' }} />
 
-        <select
-          className="form-select"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          style={{ width: 'auto', minWidth: 115, height: 34, padding: '0 30px 0 10px', fontSize: '0.8rem' }}
-        >
-          <option value="">All Types</option>
-          {['task', 'bug', 'story', 'epic'].map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-
-        {/* Due Date Range Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)', borderLeft: '1px solid var(--border-color)', paddingLeft: 10 }}>
-          <Calendar size={14} />
-          <span>Due From:</span>
-          <DateFilterInput
-            value={filterDueDateFrom}
-            onChange={(e) => setFilterDueDateFrom(e.target.value)}
-            placeholder="--/--/----"
-          />
+          {/* Due Date Range */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
+            <Calendar size={14} style={{ color: '#d97706' }} />
+            <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>Due Date:</span>
+            <DateFilterInput
+              value={filterDueDateFrom}
+              onChange={(e) => setFilterDueDateFrom(e.target.value)}
+              placeholder="From: --/--/----"
+            />
+            <span>to</span>
+            <DateFilterInput
+              value={filterDueDateTo}
+              onChange={(e) => setFilterDueDateTo(e.target.value)}
+              placeholder="To: --/--/----"
+            />
+          </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <span>To:</span>
-          <DateFilterInput
-            value={filterDueDateTo}
-            onChange={(e) => setFilterDueDateTo(e.target.value)}
-            placeholder="--/--/----"
-          />
-        </div>
-
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        )}
       </div>
 
       {/* Board Columns */}

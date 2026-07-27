@@ -48,9 +48,12 @@ export default function IssuesPage() {
   const [priorityFilter, setPriorityFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
+  const [raisedByFilter, setRaisedByFilter] = useState('');
   const [sprintFilter, setSprintFilter] = useState('');
   const [filterDueDateFrom, setFilterDueDateFrom] = useState('');
   const [filterDueDateTo, setFilterDueDateTo] = useState('');
+  const [filterRaisedDateFrom, setFilterRaisedDateFrom] = useState('');
+  const [filterRaisedDateTo, setFilterRaisedDateTo] = useState('');
 
   const defaultFilterSet = useRef(false);
 
@@ -103,9 +106,12 @@ export default function IssuesPage() {
     setPriorityFilter('');
     setTypeFilter('');
     setAssigneeFilter('');
+    setRaisedByFilter('');
     setSprintFilter('');
     setFilterDueDateFrom('');
     setFilterDueDateTo('');
+    setFilterRaisedDateFrom('');
+    setFilterRaisedDateTo('');
     setSortBy('created_at');
     setSortDir('desc');
   };
@@ -117,9 +123,12 @@ export default function IssuesPage() {
     if (priorityFilter) count++;
     if (typeFilter) count++;
     if (assigneeFilter) count++;
+    if (raisedByFilter) count++;
     if (sprintFilter) count++;
     if (filterDueDateFrom) count++;
     if (filterDueDateTo) count++;
+    if (filterRaisedDateFrom) count++;
+    if (filterRaisedDateTo) count++;
     return count;
   }, [
     search,
@@ -127,9 +136,12 @@ export default function IssuesPage() {
     priorityFilter,
     typeFilter,
     assigneeFilter,
+    raisedByFilter,
     sprintFilter,
     filterDueDateFrom,
     filterDueDateTo,
+    filterRaisedDateFrom,
+    filterRaisedDateTo,
   ]);
 
   const filtered = useMemo(() => {
@@ -154,6 +166,14 @@ export default function IssuesPage() {
           (i.assignee_id || i.assignee?.id) === Number(assigneeFilter) ||
           (i.assignee_id || i.assignee?.id) === assigneeFilter
       );
+    }
+
+    if (raisedByFilter.trim()) {
+      const q = raisedByFilter.trim().toLowerCase();
+      result = result.filter((i) => {
+        const rName = i.raised_by_name || i.raised_by?.full_name || i.raised_by?.username || i.reporter?.full_name || i.reporter?.username || '';
+        return rName.toLowerCase().includes(q);
+      });
     }
 
     if (sprintFilter) {
@@ -185,6 +205,28 @@ export default function IssuesPage() {
         if (!dueDateStr) return false;
         const issueDate = new Date(dueDateStr);
         const toDate = new Date(filterDueDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        return issueDate <= toDate;
+      });
+    }
+
+    if (filterRaisedDateFrom) {
+      result = result.filter((i) => {
+        const rDateStr = i.raised_date || i.created_at;
+        if (!rDateStr) return false;
+        const issueDate = new Date(rDateStr);
+        const fromDate = new Date(filterRaisedDateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        return issueDate >= fromDate;
+      });
+    }
+
+    if (filterRaisedDateTo) {
+      result = result.filter((i) => {
+        const rDateStr = i.raised_date || i.created_at;
+        if (!rDateStr) return false;
+        const issueDate = new Date(rDateStr);
+        const toDate = new Date(filterRaisedDateTo);
         toDate.setHours(23, 59, 59, 999);
         return issueDate <= toDate;
       });
@@ -432,6 +474,15 @@ export default function IssuesPage() {
               })}
           </select>
 
+          {/* Raised By Filter */}
+          <input
+            className="form-input"
+            placeholder="Filter Raised By..."
+            value={raisedByFilter}
+            onChange={(e) => setRaisedByFilter(e.target.value)}
+            style={{ width: 140, height: 34, fontSize: '0.8rem' }}
+          />
+
           {/* Sprint / Phase */}
           <select
             className="form-select"
@@ -471,6 +522,33 @@ export default function IssuesPage() {
             <DateFilterInput
               value={filterDueDateTo}
               onChange={(e) => setFilterDueDateTo(e.target.value)}
+              placeholder="To date"
+            />
+          </div>
+
+          {/* Raised Date Range */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              borderLeft: '1px solid var(--border-color)',
+              paddingLeft: 10,
+            }}
+          >
+            <Calendar size={14} color="#0284c7" />
+            <span>Raised:</span>
+            <DateFilterInput
+              value={filterRaisedDateFrom}
+              onChange={(e) => setFilterRaisedDateFrom(e.target.value)}
+              placeholder="From date"
+            />
+            <span>-</span>
+            <DateFilterInput
+              value={filterRaisedDateTo}
+              onChange={(e) => setFilterRaisedDateTo(e.target.value)}
               placeholder="To date"
             />
           </div>
@@ -535,8 +613,9 @@ export default function IssuesPage() {
                 <th style={{ padding: '12px 16px', width: 110 }}>Priority</th>
                 <th style={{ padding: '12px 16px', width: 140 }}>Sprint / Phase</th>
                 <th style={{ padding: '12px 16px', width: 130 }}>Deadline</th>
-                <th style={{ padding: '12px 16px', width: 160 }}>Assignee</th>
-                <th style={{ padding: '12px 16px', width: 120 }}>Created</th>
+                <th style={{ padding: '12px 16px', width: 150 }}>Assignee</th>
+                <th style={{ padding: '12px 16px', width: 150 }}>Raised By</th>
+                <th style={{ padding: '12px 16px', width: 120 }}>Raised Date</th>
               </tr>
             </thead>
             <tbody>
@@ -604,6 +683,33 @@ export default function IssuesPage() {
                       </span>
                     )}
                   </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    {issue.raised_by_name ? (
+                      <span style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                        {issue.raised_by_name}
+                      </span>
+                    ) : issue.raised_by || issue.reporter ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Avatar
+                          name={
+                            (issue.raised_by || issue.reporter).full_name ||
+                            (issue.raised_by || issue.reporter).name ||
+                            (issue.raised_by || issue.reporter).username
+                          }
+                          size={24}
+                        />
+                        <span style={{ fontSize: '0.825rem', fontWeight: 500 }}>
+                          {(issue.raised_by || issue.reporter).full_name ||
+                            (issue.raised_by || issue.reporter).name ||
+                            (issue.raised_by || issue.reporter).username}
+                        </span>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-light)', fontSize: '0.825rem' }}>
+                        —
+                      </span>
+                    )}
+                  </td>
                   <td
                     style={{
                       padding: '12px 16px',
@@ -611,7 +717,7 @@ export default function IssuesPage() {
                       fontSize: '0.825rem',
                     }}
                   >
-                    {formatDate(issue.created_at)}
+                    {formatDate(issue.raised_date || issue.created_at)}
                   </td>
                 </tr>
               ))}

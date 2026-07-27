@@ -37,6 +37,8 @@ class Issue(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    raised_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    raised_by_name = Column(String(255), nullable=True)
     sprint_id = Column(Integer, ForeignKey("sprints.id"), nullable=True)
     parent_id = Column(Integer, ForeignKey("issues.id"), nullable=True)
 
@@ -48,6 +50,7 @@ class Issue(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
     due_date = Column(DateTime, nullable=True)
+    raised_date = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=True)
 
     # Relationships
     project = relationship("Project", back_populates="issues")
@@ -56,6 +59,9 @@ class Issue(Base):
     )
     reporter = relationship(
         "User", back_populates="reported_issues", foreign_keys=[reporter_id]
+    )
+    raised_by = relationship(
+        "User", foreign_keys=[raised_by_id]
     )
     sprint = relationship("Sprint", back_populates="issues")
     comments = relationship(
