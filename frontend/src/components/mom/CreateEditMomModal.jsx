@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { momApi, projectApi, uploadApi, getAttachmentUrl } from '../../api';
+import { momApi, projectApi, uploadApi, getAttachmentUrl, getCleanFilename } from '../../api';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Paperclip, Trash2, Upload, Calendar, Clock, MapPin, User, FileText, CheckCircle2 } from 'lucide-react';
@@ -384,7 +384,7 @@ export default function CreateEditMomModal({ open, onClose, momData = null, defa
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {form.attachment_name || 'Attached File'}
+                  {form.attachment_name || getCleanFilename(form.attachment_url) || 'Attached File'}
                 </a>
               </div>
               <button

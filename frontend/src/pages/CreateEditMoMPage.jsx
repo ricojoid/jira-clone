@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { momApi, projectApi, uploadApi, getAttachmentUrl } from '../api';
+import { momApi, projectApi, uploadApi, getAttachmentUrl, getCleanFilename } from '../api';
 import Button from '../components/ui/Button';
 import {
   ArrowLeft,
@@ -502,7 +502,7 @@ export default function CreateEditMoMPage() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {form.attachment_name || 'Attached File'}
+                  {form.attachment_name || getCleanFilename(form.attachment_url) || 'Attached File'}
                 </a>
               </div>
               <button

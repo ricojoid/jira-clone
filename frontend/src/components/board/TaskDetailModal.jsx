@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Trash2, Edit2, Send, Plus, X, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { issueApi, userApi, sprintApi, projectApi, getAttachmentUrl } from '../../api';
+import { issueApi, userApi, sprintApi, projectApi, getAttachmentUrl, getCleanFilename } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -157,6 +157,24 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
       toast.error('Failed to add comment');
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const canDeleteComment = (c) => {
+    if (isSuperAdmin || isPM) return true;
+    const authorId = c.author_id || c.author?.id;
+    return Boolean(user && authorId && user.id === authorId);
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    try {
+      await issueApi.deleteComment(commentId);
+      toast.success('Comment deleted');
+      setComments((prev) => prev.filter((c) => (c.id || c._id) !== commentId));
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      toast.error(err.response?.data?.detail || 'Failed to delete comment');
     }
   };
 
@@ -393,14 +411,27 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                         border: '1px solid var(--border-light)',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} src={c.author?.avatar_url || c.author?.avatar} size={24} />
-                        <span style={{ fontWeight: 700, fontSize: '0.825rem' }}>
-                          {c.author?.full_name || c.author?.username || c.author?.name || 'User'}
-                        </span>
-                        <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-                          {formatDate(c.created_at)}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <Avatar name={c.author?.full_name || c.author?.username || c.author?.name} src={c.author?.avatar_url || c.author?.avatar} size={24} />
+                          <span style={{ fontWeight: 700, fontSize: '0.825rem' }}>
+                            {c.author?.full_name || c.author?.username || c.author?.name || 'User'}
+                          </span>
+                          <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                            {formatDate(c.created_at)}
+                          </span>
+                        </div>
+                        {canDeleteComment(c) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(c.id || c._id)}
+                            className="btn btn-ghost btn-sm"
+                            title="Delete comment"
+                            style={{ padding: '2px 6px', color: '#ef4444' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-body)', whiteSpace: 'pre-wrap', paddingLeft: 34 }}>
                         <FormattedText text={c.content} />
@@ -447,7 +478,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                               }}
                             >
                               <FileText size={16} />
-                              <span>Open Attachment ({c.attachment_url.split('/').pop()})</span>
+                              <span>Open Attachment ({getCleanFilename(c.attachment_url)})</span>
                               <ExternalLink size={14} />
                             </a>
                           )}

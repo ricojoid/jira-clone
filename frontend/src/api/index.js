@@ -140,6 +140,17 @@ export const getAttachmentUrl = (url) => {
   return cleanPath;
 };
 
+export const getCleanFilename = (url) => {
+  if (!url) return '';
+  const rawName = url.split('/').pop() || '';
+  try {
+    const decoded = decodeURIComponent(rawName);
+    return decoded.replace(/_[a-f0-9]{8}(\.[^.]+)$/i, '$1');
+  } catch {
+    return rawName.replace(/_[a-f0-9]{8}(\.[^.]+)$/i, '$1');
+  }
+};
+
 export const momApi = {
   list: (params) => api.get('/moms', { params }),
   get: (id) => api.get(`/moms/${id}`),

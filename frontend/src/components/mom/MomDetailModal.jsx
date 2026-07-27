@@ -1,6 +1,6 @@
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { getAttachmentUrl } from '../../api';
+import { getAttachmentUrl, getCleanFilename } from '../../api';
 import {
   Calendar,
   Clock,
@@ -227,7 +227,7 @@ export default function MomDetailModal({ open, onClose, mom, onEdit, onDelete })
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#1d4ed8', fontWeight: 600 }}>Attachment</div>
                 <div style={{ fontWeight: 700, color: '#1e3a8a' }}>
-                  {mom.attachment_name || 'Attached File'}
+                  {mom.attachment_name || getCleanFilename(mom.attachment_url) || 'Attached File'}
                 </div>
               </div>
             </div>

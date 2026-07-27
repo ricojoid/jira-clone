@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { momApi, projectApi, getAttachmentUrl } from '../api';
+import { momApi, projectApi, getAttachmentUrl, getCleanFilename } from '../api';
 import { exportMomToExcel } from '../utils/excelExport';
 import Button from '../components/ui/Button';
 import {
@@ -402,7 +402,7 @@ export default function MoMPage() {
                         textDecoration: 'none',
                       }}
                     >
-                      <Paperclip size={12} /> {mom.attachment_name || 'Attachment'}
+                      <Paperclip size={12} /> {mom.attachment_name || getCleanFilename(mom.attachment_url) || 'Attachment'}
                     </a>
                   ) : (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>No attachment</span>

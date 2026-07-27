@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { momApi, getAttachmentUrl } from '../api';
+import { momApi, getAttachmentUrl, getCleanFilename } from '../api';
 import { exportMomToExcel } from '../utils/excelExport';
 import Button from '../components/ui/Button';
 import {
@@ -375,7 +375,7 @@ export default function MoMDetailPage() {
               <div>
                 <div style={{ fontSize: '0.75rem', color: '#1d4ed8', fontWeight: 600 }}>Attached File</div>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e3a8a', marginTop: 2 }}>
-                  {mom.attachment_name || 'Attached File'}
+                  {mom.attachment_name || getCleanFilename(mom.attachment_url) || 'Attached File'}
                 </div>
               </div>
             </div>
