@@ -232,10 +232,11 @@ export default function SprintsPage() {
   const getSprintProgress = (sprintId) => {
     const sKey = String(sprintId);
     const issues = issuesBySprintId[sKey] || [];
-    if (issues.length === 0) return { done: 0, total: 0, pct: 0, issues: [] };
-    const done = issues.filter((i) => String(i.status || '').toLowerCase() === 'done').length;
-    const pct = Math.round((done / issues.length) * 100);
-    return { done, total: issues.length, pct, issues };
+    const activeIssues = issues.filter((i) => String(i.status || '').toLowerCase() !== 'cancelled');
+    if (activeIssues.length === 0) return { done: 0, total: 0, pct: 0, issues };
+    const done = activeIssues.filter((i) => String(i.status || '').toLowerCase() === 'done').length;
+    const pct = Math.round((done / activeIssues.length) * 100);
+    return { done, total: activeIssues.length, pct, issues };
   };
 
   const formatDate = (dateStr) => {

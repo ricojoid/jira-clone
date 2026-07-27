@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  XCircle,
   FileText,
   Bug,
   Bookmark,
@@ -17,6 +18,7 @@ export const STATUS_META = {
   ready_to_is_review: { label: 'Ready to IS Review', className: 'badge-ready_is', color: '#ea580c', bg: '#fff7ed', icon: Clock },
   is_review: { label: 'IS Review', className: 'badge-is_review', color: '#ca8a04', bg: '#fefce8', icon: AlertCircle },
   done: { label: 'Done', className: 'badge-done', color: '#16a34a', bg: '#f0fdf4', icon: CheckCircle2 },
+  cancelled: { label: 'Cancelled', className: 'badge-cancelled', color: '#ef4444', bg: '#fef2f2', icon: XCircle },
 };
 
 export const TYPE_META = {

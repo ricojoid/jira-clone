@@ -389,8 +389,30 @@ def move_issue(
                 detail="Only the assignee, reporter, PM, or Admin can move this card",
             )
 
-    issue.status = move_data.status
-    issue.position = move_data.position
+    target_status = move_data.status
+    target_pos = max(0, move_data.position if move_data.position is not None else 0)
+
+    # Get all other issues in target status for this project, ordered by position
+    other_issues = (
+        db.query(Issue)
+        .filter(
+            Issue.project_id == issue.project_id,
+            Issue.status == target_status,
+            Issue.id != issue.id,
+        )
+        .order_by(Issue.position.asc(), Issue.id.asc())
+        .all()
+    )
+
+    # Insert issue at target_pos
+    target_pos = min(target_pos, len(other_issues))
+    other_issues.insert(target_pos, issue)
+
+    # Re-assign sequential positions
+    for idx, iss in enumerate(other_issues):
+        iss.status = target_status
+        iss.position = idx
+
     db.commit()
     db.refresh(issue)
     return issue

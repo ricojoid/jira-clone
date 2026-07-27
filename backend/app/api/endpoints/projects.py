@@ -95,6 +95,7 @@ def create_project(
         {"name": "Ready to IS Review", "position": 4, "color": "#d97706"},
         {"name": "IS Review", "position": 5, "color": "#ca8a04"},
         {"name": "Done", "position": 6, "color": "#16a34a"},
+        {"name": "Cancelled", "position": 7, "color": "#ef4444"},
     ]
     for col in default_columns:
         db.add(BoardColumn(board_id=board.id, **col))

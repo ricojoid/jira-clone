@@ -20,6 +20,7 @@ const DEFAULT_COLUMNS = [
   { id: 'ready_to_is_review', name: 'Ready to IS Review', status: 'ready_to_is_review', color: '#d97706' },
   { id: 'is_review', name: 'IS Review', status: 'is_review', color: '#ca8a04' },
   { id: 'done', name: 'Done', status: 'done', color: '#16a34a' },
+  { id: 'cancelled', name: 'Cancelled', status: 'cancelled', color: '#ef4444' },
 ];
 
 export default function BoardPage() {
@@ -69,7 +70,7 @@ export default function BoardPage() {
 
       if (boardData && boardData.columns && boardData.columns.length >= 7) {
         setBoard(boardData);
-        const normColumns = boardData.columns.map((col) => {
+        let normColumns = boardData.columns.map((col) => {
           let status = col.status;
           if (!status && col.name) {
             status = col.name.toLowerCase().replace(/\s+/g, '_');
@@ -77,6 +78,18 @@ export default function BoardPage() {
           }
           return { ...col, status: status || 'todo' };
         });
+
+        const hasCancelled = normColumns.some((c) => (c.status || '').toLowerCase() === 'cancelled');
+        if (!hasCancelled) {
+          normColumns.push({
+            id: 'cancelled',
+            name: 'Cancelled',
+            status: 'cancelled',
+            color: '#ef4444',
+            position: normColumns.length,
+          });
+        }
+
         setColumns(normColumns);
       } else {
         setBoard(boardData || { name: 'Kanban Board' });
@@ -127,14 +140,48 @@ export default function BoardPage() {
   }, [issues, filterDueDateFrom, filterDueDateTo]);
 
   const handleIssueMove = async (issueId, targetStatus, newIndex) => {
-    setIssues((prev) =>
-      prev.map((iss) => {
-        if (iss._id === issueId || iss.id === issueId) {
-          return { ...iss, status: targetStatus };
+    setIssues((prev) => {
+      const cloned = [...prev];
+      const targetIdx = cloned.findIndex((i) => (i.id || i._id) === issueId);
+      if (targetIdx === -1) return prev;
+
+      const [movedItem] = cloned.splice(targetIdx, 1);
+      const updatedItem = {
+        ...movedItem,
+        status: targetStatus,
+        position: newIndex,
+      };
+
+      // Items currently belonging to targetStatus in current order
+      const targetStatusItems = cloned.filter(
+        (i) => (i.status || 'todo').toLowerCase() === targetStatus.toLowerCase()
+      );
+
+      const safeIndex = Math.max(0, Math.min(newIndex, targetStatusItems.length));
+
+      if (targetStatusItems.length === 0 || safeIndex >= targetStatusItems.length) {
+        cloned.push(updatedItem);
+      } else {
+        const pivotItem = targetStatusItems[safeIndex];
+        const insertIdx = cloned.indexOf(pivotItem);
+        if (insertIdx !== -1) {
+          cloned.splice(insertIdx, 0, updatedItem);
+        } else {
+          cloned.push(updatedItem);
         }
-        return iss;
-      })
-    );
+      }
+
+      // Re-assign positions sequentially for targetStatus items
+      let posCounter = 0;
+      return cloned.map((item) => {
+        if ((item.status || 'todo').toLowerCase() === targetStatus.toLowerCase()) {
+          const newItem = { ...item, position: posCounter };
+          posCounter++;
+          return newItem;
+        }
+        return item;
+      });
+    });
 
     try {
       await issueApi.move(issueId, {

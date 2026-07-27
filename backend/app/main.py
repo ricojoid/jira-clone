@@ -52,6 +52,23 @@ def _auto_migrate_and_seed():
                     except Exception:
                         conn.execute(text("ALTER TABLE comments ADD COLUMN attachment_url VARCHAR(500)"))
                 print("Auto-migrated comments table: added attachment_url column")
+
+        if "board_columns" in tables and "boards" in tables:
+            from app.models.board import Board, BoardColumn
+            db = SessionLocal()
+            boards = db.query(Board).all()
+            for b in boards:
+                has_cancelled = db.query(BoardColumn).filter(
+                    BoardColumn.board_id == b.id,
+                    (BoardColumn.name == "Cancelled") | (BoardColumn.status == "cancelled")
+                ).first()
+                if not has_cancelled:
+                    max_pos = db.query(BoardColumn.position).filter(BoardColumn.board_id == b.id).order_by(BoardColumn.position.desc()).first()
+                    new_pos = (max_pos[0] + 1) if max_pos else 7
+                    col = BoardColumn(board_id=b.id, name="Cancelled", position=new_pos, color="#ef4444", status="cancelled")
+                    db.add(col)
+            db.commit()
+            db.close()
     except Exception as e:
         print("Auto-migration warning:", e)
 

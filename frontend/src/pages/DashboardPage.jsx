@@ -11,6 +11,7 @@ import {
   Zap,
   Layers,
   Users,
+  XCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { projectApi, sprintApi, issueApi, userApi } from '../api';
@@ -172,12 +173,20 @@ export default function DashboardPage() {
   }, [recentIssues, user]);
 
   const totalTasks = useMemo(() => {
-    return Object.values(issuesMap).reduce((acc, list) => acc + list.length, 0);
+    return Object.values(issuesMap).reduce((acc, list) => {
+      return acc + list.filter((i) => (i.status ?? '').toLowerCase() !== 'cancelled').length;
+    }, 0);
   }, [issuesMap]);
 
   const completedTasks = useMemo(() => {
     return Object.values(issuesMap).reduce((acc, list) => {
       return acc + list.filter((i) => (i.status ?? '').toLowerCase() === 'done').length;
+    }, 0);
+  }, [issuesMap]);
+
+  const cancelledTasks = useMemo(() => {
+    return Object.values(issuesMap).reduce((acc, list) => {
+      return acc + list.filter((i) => (i.status ?? '').toLowerCase() === 'cancelled').length;
     }, 0);
   }, [issuesMap]);
 
@@ -226,7 +235,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Metrics Stat Cards (Gapless Grid) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {/* Stat 1 */}
         <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -274,6 +283,21 @@ export default function DashboardPage() {
 
         {/* Stat 4 */}
         <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <XCircle size={24} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+              Cancelled Tasks
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ef4444', marginTop: 2 }}>
+              {cancelledTasks}
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 5 */}
+        <div className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <TrendingUp size={24} />
           </div>
@@ -315,8 +339,9 @@ export default function DashboardPage() {
                 {projects.map((p) => {
                   const projId = p.id || p._id;
                   const issues = issuesMap[projId] || [];
-                  const doneCount = issues.filter((i) => (i.status ?? '').toLowerCase() === 'done').length;
-                  const pct = issues.length > 0 ? Math.round((doneCount / issues.length) * 100) : 0;
+                  const activeIssues = issues.filter((i) => (i.status ?? '').toLowerCase() !== 'cancelled');
+                  const doneCount = activeIssues.filter((i) => (i.status ?? '').toLowerCase() === 'done').length;
+                  const pct = activeIssues.length > 0 ? Math.round((doneCount / activeIssues.length) * 100) : 0;
 
                   return (
                     <div

@@ -216,8 +216,9 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   if (!open) return null;
 
   const subtasks = issue?.children || [];
-  const completedSubtasks = subtasks.filter((s) => s.status === 'done').length;
-  const subtaskProgress = subtasks.length > 0 ? (completedSubtasks / subtasks.length) * 100 : 0;
+  const activeSubtasks = subtasks.filter((s) => (s.status || '').toLowerCase() !== 'cancelled');
+  const completedSubtasks = activeSubtasks.filter((s) => (s.status || '').toLowerCase() === 'done').length;
+  const subtaskProgress = activeSubtasks.length > 0 ? (completedSubtasks / activeSubtasks.length) * 100 : 0;
 
   return (
     <Modal open={open} onClose={onClose} title={issue?.issue_key || 'Issue Details'} maxWidth="920px">
