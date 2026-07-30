@@ -20,6 +20,7 @@ export function exportBoardToExcel(issues = [], projectName = 'Project') {
     ready_to_is_review: 'Ready to IS Review',
     is_review: 'IS Review',
     done: 'Done',
+    cancelled: 'Cancelled',
     in_review: 'In Review',
   };
 

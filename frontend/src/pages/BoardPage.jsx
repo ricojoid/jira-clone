@@ -128,6 +128,18 @@ export default function BoardPage() {
           }
         });
 
+        // Sort normColumns based on DEFAULT_COLUMNS order so 'done' is always at the very end
+        const orderMap = {};
+        DEFAULT_COLUMNS.forEach((col, idx) => {
+          orderMap[col.status] = idx;
+        });
+
+        normColumns.sort((a, b) => {
+          const posA = orderMap[(a.status || '').toLowerCase()] ?? a.position ?? 99;
+          const posB = orderMap[(b.status || '').toLowerCase()] ?? b.position ?? 99;
+          return posA - posB;
+        });
+
         setColumns(normColumns);
       } else {
         setBoard(boardData || { name: 'Kanban Board' });
