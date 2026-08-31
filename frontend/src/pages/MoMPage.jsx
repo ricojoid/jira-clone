@@ -216,7 +216,7 @@ export default function MoMPage() {
               <option value="">All Projects</option>
               {projects.map((p) => (
                 <option key={p.id || p._id} value={p.id || p._id}>
-                  {p.name} ({p.key})
+                  {p.name}
                 </option>
               ))}
             </select>

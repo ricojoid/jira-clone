@@ -159,4 +159,13 @@ export const momApi = {
   delete: (id) => api.delete(`/moms/${id}`),
 };
 
+export const agendaApi = {
+  list: (params) => api.get('/agendas', { params }),
+  get: (id) => api.get(`/agendas/${id}`),
+  create: (data) => api.post('/agendas', data),
+  update: (id, data) => api.put(`/agendas/${id}`, data),
+  delete: (id) => api.delete(`/agendas/${id}`),
+};
+
 export default api;
+

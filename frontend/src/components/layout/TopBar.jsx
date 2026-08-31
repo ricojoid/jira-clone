@@ -1,33 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, LogOut, Settings, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, Settings, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
 import NotificationBell from './NotificationBell';
 
-function buildBreadcrumbs(pathname) {
-  const segments = pathname.split('/').filter(Boolean);
-  const crumbs = [{ label: 'Home', path: '/' }];
-
-  let currentPath = '';
-  for (const segment of segments) {
-    currentPath += `/${segment}`;
-    const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
-    crumbs.push({ label, path: currentPath });
-  }
-
-  return crumbs;
-}
-
 export default function TopBar({ onMobileMenuToggle }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
-
-  const breadcrumbs = buildBreadcrumbs(location.pathname);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -66,7 +49,7 @@ export default function TopBar({ onMobileMenuToggle }) {
         zIndex: 90,
       }}
     >
-      {/* Left: Mobile Menu & Breadcrumbs */}
+      {/* Left: Mobile Menu Toggle Button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           type="button"
@@ -85,28 +68,6 @@ export default function TopBar({ onMobileMenuToggle }) {
         >
           <Menu size={22} color="var(--primary)" />
         </button>
-
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
-          {breadcrumbs.map((crumb, idx) => {
-            const isLast = idx === breadcrumbs.length - 1;
-            return (
-              <span key={crumb.path} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                {idx > 0 && <ChevronRight size={14} color="var(--text-light)" />}
-                {isLast ? (
-                  <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{crumb.label}</span>
-                ) : (
-                  <Link
-                    to={crumb.path}
-                    className="mobile-hide"
-                    style={{ color: 'var(--text-muted)', fontWeight: 500, transition: 'color 0.15s' }}
-                  >
-                    {crumb.label}
-                  </Link>
-                )}
-              </span>
-            );
-          })}
-        </nav>
       </div>
 
       {/* Actions & Profile */}
@@ -173,7 +134,6 @@ export default function TopBar({ onMobileMenuToggle }) {
           )}
         </div>
       </div>
-
     </header>
   );
 }

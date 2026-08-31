@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   Users,
   FileText,
+  CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { projectApi } from '../../api';
@@ -34,6 +35,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     { label: 'Backlog', icon: ListTodo, path: '/backlog' },
     { label: 'Phases / Sprints', icon: Zap, path: '/sprints' },
     { label: 'Issues', icon: CheckSquare, path: '/issues' },
+    { label: 'Agenda', icon: CalendarDays, path: '/agenda' },
     { label: 'Minutes of Meeting', icon: FileText, path: '/mom' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
@@ -66,7 +68,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
 
   const handleNavClick = (path) => {
     let target = path;
-    if (['/board', '/backlog', '/sprints', '/issues'].includes(path) && selectedProject) {
+    if (['/board', '/backlog', '/sprints', '/issues', '/agenda'].includes(path) && selectedProject) {
       target = `${path}/${selectedProject}`;
     } else if (path === '/mom' && selectedProject) {
       target = `/mom/project/${selectedProject}`;
@@ -140,7 +142,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
               const projId = e.target.value;
               setSelectedProject(projId);
               const currentView = navItems.find((item) => location.pathname.startsWith(item.path));
-              if (currentView && ['/board', '/backlog', '/sprints', '/issues'].includes(currentView.path)) {
+              if (currentView && ['/board', '/backlog', '/sprints', '/issues', '/agenda'].includes(currentView.path)) {
                 navigate(`${currentView.path}/${projId}`);
               }
             }}
@@ -171,6 +173,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
                     navigate(`${item.path}/${selectedProject}`);
                   } else {
                     toast.error('Please select a project first');
+                  }
+                } else if (item.path === '/agenda') {
+                  if (selectedProject) {
+                    navigate(`/agenda/${selectedProject}`);
+                  } else {
+                    navigate('/agenda');
                   }
                 } else {
                   navigate(item.path);

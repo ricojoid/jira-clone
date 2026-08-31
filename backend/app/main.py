@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
-from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications, upload, ws_notifications, moms
+from app.api.endpoints import auth, projects, boards, sprints, issues, users, admin, notifications, upload, ws_notifications, moms, agendas
 import app.models
-from app.models import mom
+from app.models import mom, agenda
 
 # Create uploads directory if not exists
 os.makedirs("uploads", exist_ok=True)
@@ -87,6 +87,24 @@ def _auto_migrate_and_seed():
                         conn.execute(text("ALTER TABLE issues ADD COLUMN raised_by_name VARCHAR(255)"))
                     print("Auto-migrated issues table: added raised_by_name column")
 
+        if "agendas" in tables:
+            agenda_cols = [c["name"] for c in inspector.get_columns("agendas")]
+            if "pic_id" not in agenda_cols:
+                with engine.begin() as conn:
+                    try:
+                        conn.execute(text("ALTER TABLE agendas ADD pic_id INTEGER NULL"))
+                    except Exception:
+                        conn.execute(text("ALTER TABLE agendas ADD COLUMN pic_id INTEGER NULL"))
+                print("Auto-migrated agendas table: added pic_id column")
+
+        if "agenda_pics" not in tables and "agendas" in tables:
+            try:
+                from app.models.agenda import agenda_pics
+                agenda_pics.create(bind=engine, checkfirst=True)
+                print("Auto-created agenda_pics table")
+            except Exception as e:
+                print("agenda_pics create note:", e)
+
         if "board_columns" in tables and "boards" in tables:
             from app.models.board import Board, BoardColumn
             db = SessionLocal()
@@ -147,6 +165,7 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(ws_notifications.router, prefix="/api")
 app.include_router(moms.router, prefix="/api")
+app.include_router(agendas.router, prefix="/api")
 
 
 @app.get("/api/health")

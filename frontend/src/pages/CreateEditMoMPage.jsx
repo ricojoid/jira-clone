@@ -245,7 +245,7 @@ export default function CreateEditMoMPage() {
                     color: 'var(--text-main)',
                   }}
                 >
-                  {projects[0].name} ({projects[0].key})
+                  {projects[0].name}
                 </div>
               ) : (
                 <select
@@ -257,7 +257,7 @@ export default function CreateEditMoMPage() {
                   <option value="">-- Select Project --</option>
                   {projects.map((p) => (
                     <option key={p.id || p._id} value={p.id || p._id}>
-                      {p.name} ({p.key})
+                      {p.name}
                     </option>
                   ))}
                 </select>

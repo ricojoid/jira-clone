@@ -191,7 +191,7 @@ export default function CreateEditMomModal({ open, onClose, momData = null, defa
               <option value="">-- Select Project --</option>
               {projects.map((p) => (
                 <option key={p.id || p._id} value={p.id || p._id}>
-                  {p.name} ({p.key})
+                  {p.name}
                 </option>
               ))}
             </select>

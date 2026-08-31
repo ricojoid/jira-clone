@@ -4,3 +4,6 @@ from app.models.issue import Issue, Label, Comment
 from app.models.board import Board, BoardColumn
 from app.models.sprint import Sprint
 from app.models.notification import Notification
+from app.models.mom import Mom
+from app.models.agenda import Agenda
+

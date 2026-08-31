@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, MessageSquare, UserCheck, Inbox } from 'lucide-react';
+import { Bell, CheckCheck, MessageSquare, UserCheck, Inbox, CalendarDays } from 'lucide-react';
 import { notificationApi } from '../../api';
 import Avatar from '../ui/Avatar';
 import { useWebSocketNotification } from '../../hooks/useWebSocketNotification';
@@ -82,6 +82,8 @@ export default function NotificationBell() {
     setIsOpen(false);
     if (notif.issue_id) {
       navigate(`/issue/${notif.issue_id}`);
+    } else if (notif.type === 'agenda_assigned') {
+      navigate('/agenda');
     }
   };
 
@@ -253,6 +255,8 @@ export default function NotificationBell() {
                         <Avatar name={n.sender.full_name || n.sender.username} src={n.sender.avatar_url || n.sender.avatar} size={30} />
                       ) : n.type === 'comment_mention' ? (
                         <MessageSquare size={18} color="#6366f1" />
+                      ) : n.type === 'agenda_assigned' ? (
+                        <CalendarDays size={18} color="#dc2626" />
                       ) : (
                         <UserCheck size={18} color="#10b981" />
                       )}
