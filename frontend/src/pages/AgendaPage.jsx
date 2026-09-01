@@ -24,6 +24,7 @@ import {
   Sparkles,
   UserCheck,
   Users,
+  FileText,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -553,7 +554,7 @@ export default function AgendaPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
                   backgroundColor: 'var(--bg-subtle)',
                   borderBottom: '1px solid var(--border-color)',
                   textAlign: 'center',
@@ -578,7 +579,7 @@ export default function AgendaPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
                   backgroundColor: 'var(--border-color)',
                   gap: '1px',
                 }}
@@ -598,6 +599,8 @@ export default function AgendaPage() {
                       }}
                       style={{
                         minHeight: 110,
+                        minWidth: 0,
+                        overflow: 'hidden',
                         backgroundColor: cell.isPast
                           ? 'var(--bg-app)'
                           : cell.isCurrentMonth
@@ -630,6 +633,7 @@ export default function AgendaPage() {
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           marginBottom: 4,
+                          minWidth: 0,
                         }}
                       >
                         <span
@@ -646,6 +650,7 @@ export default function AgendaPage() {
                             backgroundColor: cell.isToday ? 'var(--primary)' : 'transparent',
                             color: cell.isToday ? '#ffffff' : cell.isCurrentMonth ? 'var(--text-main)' : 'var(--text-muted)',
                             boxShadow: cell.isToday ? '0 2px 6px rgba(220, 38, 38, 0.4)' : 'none',
+                            flexShrink: 0,
                           }}
                         >
                           {cell.date.date()}
@@ -657,6 +662,10 @@ export default function AgendaPage() {
                               fontSize: '0.65rem',
                               fontWeight: 800,
                               color: 'var(--text-muted)',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              minWidth: 0,
                             }}
                           >
                             {cell.agendas.length} event{cell.agendas.length > 1 ? 's' : ''}
@@ -665,7 +674,7 @@ export default function AgendaPage() {
                       </div>
 
                       {/* Agendas List in Day Cell */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'hidden' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, overflow: 'hidden', minWidth: 0, width: '100%' }}>
                         {cell.agendas.slice(0, 3).map((agenda) => {
                           const catMeta = getCategoryMeta(agenda.category);
                           const badgeColor = agenda.color || catMeta.color;
@@ -694,6 +703,9 @@ export default function AgendaPage() {
                                 gap: 4,
                                 cursor: 'pointer',
                                 transition: 'transform 0.1s ease',
+                                minWidth: 0,
+                                maxWidth: '100%',
+                                boxSizing: 'border-box',
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = 'translateX(2px)';
@@ -703,11 +715,11 @@ export default function AgendaPage() {
                               }}
                             >
                               {agenda.start_time && (
-                                <span style={{ opacity: 0.85, fontSize: '0.65rem', fontWeight: 800 }}>
+                                <span style={{ opacity: 0.85, fontSize: '0.65rem', fontWeight: 800, flexShrink: 0 }}>
                                   {agenda.start_time}
                                 </span>
                               )}
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>
                                 {agenda.title}
                               </span>
                             </div>
@@ -728,6 +740,10 @@ export default function AgendaPage() {
                               padding: '2px',
                               borderRadius: '4px',
                               backgroundColor: 'var(--bg-subtle)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              minWidth: 0,
                             }}
                           >
                             +{cell.agendas.length - 3} more
@@ -1389,19 +1405,20 @@ export default function AgendaPage() {
           open={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
           title="Agenda Detail"
-          maxWidth="560px"
+          maxWidth="1100px"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {/* Header badges */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Header badges & metadata */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span
                   className="badge"
                   style={{
                     backgroundColor: `${selectedAgenda.color || '#dc2626'}20`,
                     color: selectedAgenda.color || '#dc2626',
-                    fontSize: '0.8rem',
+                    fontSize: '0.825rem',
                     fontWeight: 800,
+                    padding: '4px 10px',
                   }}
                 >
                   {getCategoryMeta(selectedAgenda.category).label}
@@ -1412,41 +1429,138 @@ export default function AgendaPage() {
                   style={{
                     backgroundColor: 'var(--bg-subtle)',
                     color: 'var(--text-muted)',
-                    fontSize: '0.8rem',
+                    fontSize: '0.825rem',
                     fontWeight: 700,
+                    padding: '4px 10px',
                   }}
                 >
-                  <Building size={12} /> {selectedAgenda.project_name || 'Project'}
+                  <Building size={13} /> {selectedAgenda.project_name || 'Project'}
                 </span>
               </div>
 
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-muted)',
+                  fontWeight: 700,
+                  backgroundColor: 'var(--bg-subtle)',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <CalendarIcon size={14} color="var(--primary)" />
                 {dayjs(selectedAgenda.event_date).format('dddd, D MMMM YYYY')}
               </div>
             </div>
 
             {/* Title */}
             <div>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.3 }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.35, wordBreak: 'break-word' }}>
                 {selectedAgenda.title}
               </h2>
             </div>
 
-            {/* Assigned PICs Card Section */}
+            {/* Timing & Schedule Info Cards Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--bg-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Clock size={18} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Schedule Time
+                  </div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
+                    {selectedAgenda.start_time || '--:--'} &ndash; {selectedAgenda.end_time || '--:--'}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--bg-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: selectedAgenda.color || '#dc2626',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <CalendarDays size={18} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Event Date
+                  </div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-main)', marginTop: 2 }}>
+                    {dayjs(selectedAgenda.event_date).format('D MMMM YYYY')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Assigned PICs Section */}
             <div
               style={{
                 backgroundColor: (selectedAgenda.pics && selectedAgenda.pics.length > 0) || selectedAgenda.pic_name ? '#f0fdf4' : 'var(--bg-subtle)',
                 border: (selectedAgenda.pics && selectedAgenda.pics.length > 0) || selectedAgenda.pic_name ? '1px solid #bbf7d0' : '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-md)',
-                padding: '12px 14px',
+                padding: '14px 16px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 10,
+                gap: 12,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  <Users size={14} color="#16a34a" /> Persons In Charge (PIC)
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 800, color: '#15803d', textTransform: 'uppercase' }}>
+                  <Users size={15} color="#16a34a" /> Persons In Charge (PIC)
                 </div>
                 {((selectedAgenda.pics && selectedAgenda.pics.length > 0) || selectedAgenda.pic_name) && (
                   <span
@@ -1463,7 +1577,13 @@ export default function AgendaPage() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gap: 10,
+                }}
+              >
                 {selectedAgenda.pics && selectedAgenda.pics.length > 0 ? (
                   selectedAgenda.pics.map((pic) => (
                     <div
@@ -1471,18 +1591,26 @@ export default function AgendaPage() {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
-                        padding: '6px 10px',
+                        gap: 10,
+                        padding: '8px 12px',
                         borderRadius: 'var(--radius-sm)',
                         backgroundColor: '#ffffff',
                         border: '1px solid #bbf7d0',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                        minWidth: 0,
                       }}
                     >
-                      <Avatar name={pic.full_name || pic.username} src={pic.avatar_url} size={24} />
-                      <span style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                        {pic.full_name || pic.username}
-                      </span>
+                      <Avatar name={pic.full_name || pic.username} src={pic.avatar_url} size={28} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {pic.full_name || pic.username}
+                        </div>
+                        {pic.username && pic.full_name && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            @{pic.username}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : selectedAgenda.pic_name ? (
@@ -1490,17 +1618,20 @@ export default function AgendaPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
-                      padding: '6px 10px',
+                      gap: 10,
+                      padding: '8px 12px',
                       borderRadius: 'var(--radius-sm)',
                       backgroundColor: '#ffffff',
                       border: '1px solid #bbf7d0',
+                      minWidth: 0,
                     }}
                   >
-                    <Avatar name={selectedAgenda.pic_name} src={selectedAgenda.pic_avatar} size={24} />
-                    <span style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      {selectedAgenda.pic_name}
-                    </span>
+                    <Avatar name={selectedAgenda.pic_name} src={selectedAgenda.pic_avatar} size={28} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {selectedAgenda.pic_name}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <span style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
@@ -1510,43 +1641,25 @@ export default function AgendaPage() {
               </div>
             </div>
 
-            {/* Timing details card */}
-            {(selectedAgenda.start_time || selectedAgenda.end_time) && (
-              <div
-                style={{
-                  backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: '0.875rem',
-                  color: 'var(--text-body)',
-                }}
-              >
-                <Clock size={16} color="var(--primary)" />
-                <span>
-                  <strong>Time:</strong> {selectedAgenda.start_time || '--:--'} - {selectedAgenda.end_time || '--:--'}
-                </span>
-              </div>
-            )}
-
-            {/* Description / Notes */}
+            {/* Description / Notes Section */}
             {selectedAgenda.description && (
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Agenda Notes & Details
-                </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <FileText size={14} color="var(--primary)" /> Agenda Notes & Details
+                </div>
                 <div
                   style={{
-                    marginTop: 6,
-                    fontSize: '0.875rem',
+                    fontSize: '0.9rem',
                     color: 'var(--text-body)',
-                    lineHeight: 1.6,
+                    lineHeight: 1.7,
                     whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
                     backgroundColor: 'var(--bg-hover)',
-                    padding: '12px 14px',
+                    border: '1px solid var(--border-color)',
+                    padding: '14px 16px',
                     borderRadius: 'var(--radius-md)',
+                    maxHeight: '300px',
+                    overflowY: 'auto',
                   }}
                 >
                   {selectedAgenda.description}
@@ -1554,20 +1667,27 @@ export default function AgendaPage() {
               </div>
             )}
 
-            {/* Creator Info Footer */}
+            {/* Creator Info & Action Footer */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingTop: 12,
+                paddingTop: 14,
                 borderTop: '1px solid var(--border-color)',
+                flexWrap: 'wrap',
+                gap: 12,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Avatar name={selectedAgenda.creator_name} src={selectedAgenda.creator_avatar} size={28} />
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Created by <strong style={{ color: 'var(--text-main)' }}>{selectedAgenda.creator_name || 'User'}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar name={selectedAgenda.creator_name} src={selectedAgenda.creator_avatar} size={32} />
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div>Created by <strong style={{ color: 'var(--text-main)' }}>{selectedAgenda.creator_name || 'User'}</strong></div>
+                  {selectedAgenda.created_at && (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-light)', marginTop: 1 }}>
+                      {dayjs(selectedAgenda.created_at).format('D MMM YYYY, HH:mm')}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1575,12 +1695,12 @@ export default function AgendaPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {selectedAgenda.can_edit && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     icon={Edit2}
                     onClick={() => handleOpenEdit(selectedAgenda)}
                   >
-                    Edit
+                    Edit Agenda
                   </Button>
                 )}
 
@@ -1595,6 +1715,14 @@ export default function AgendaPage() {
                     Delete
                   </Button>
                 )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDetailModalOpen(false)}
+                >
+                  Close
+                </Button>
               </div>
             </div>
           </div>
