@@ -232,7 +232,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="form-label">Issue Type</label>
           <select className="form-select" value={form.type} onChange={handleChange('type')}>
@@ -267,7 +267,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="form-label">Assignee</label>
           <select className="form-select" value={form.assignee_id} onChange={handleChange('assignee_id')}>
@@ -294,7 +294,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="form-label">{isWaterfall ? 'Phase' : 'Sprint'}</label>
           <select className="form-select" value={form.sprint_id} onChange={handleChange('sprint_id')}>
@@ -320,7 +320,7 @@ export default function CreateIssueDialog({ open, onClose, projectId, onCreated,
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
           <label className="form-label">Due Date (Deadline)</label>
           <input

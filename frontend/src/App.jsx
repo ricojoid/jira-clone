@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { MotionConfig } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeModeProvider } from './context/ThemeContext';
 import MainLayout from './components/layout/MainLayout';
@@ -20,17 +21,25 @@ import AgendaPage from './pages/AgendaPage';
 
 function App() {
   return (
+    <MotionConfig reducedMotion="user">
     <ThemeModeProvider>
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            borderRadius: '10px',
-            background: '#18181b',
+            borderRadius: '14px',
+            background: 'rgba(24, 24, 27, 0.92)',
+            backdropFilter: 'blur(12px)',
             color: '#ffffff',
             fontSize: '0.875rem',
+            fontWeight: 500,
+            padding: '10px 14px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 12px 32px -8px rgba(0, 0, 0, 0.35)',
           },
+          success: { iconTheme: { primary: '#22c55e', secondary: '#ffffff' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
         }}
       />
       <AuthProvider>
@@ -67,6 +76,7 @@ function App() {
         </BrowserRouter>
       </AuthProvider>
     </ThemeModeProvider>
+    </MotionConfig>
   );
 }
 

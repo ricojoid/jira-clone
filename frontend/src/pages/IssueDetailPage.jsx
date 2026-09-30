@@ -231,7 +231,7 @@ export default function IssueDetailPage() {
   return (
     <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Top Action Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
           <Link to={`/board/${issue.project_id}`} style={{ color: 'var(--primary)', fontWeight: 700 }}>
             Board

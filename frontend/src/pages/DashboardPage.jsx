@@ -239,7 +239,7 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Top Banner Header */}
       <div
-        className="card"
+        className="card dashboard-hero"
         style={{
           padding: '28px 32px',
           background: 'linear-gradient(135deg, #ffffff 0%, #fef2f2 100%)',
@@ -391,7 +391,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content 2-Column Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+      <div className="m-stack-lg" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
         {/* Left Column: Projects Grid & Recent Activity */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Projects Card Section */}
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: 16 }}>
                 {filteredProjects.map((p) => {
                   const projId = p.id || p._id;
                   const issues = issuesMap[projId] || [];
@@ -695,7 +695,7 @@ export default function DashboardPage() {
 
         <div className="form-group">
           <label className="form-label">SDLC Methodology *</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 4 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 4 }}>
             {/* Option 1: Scrum */}
             <div
               onClick={() => setForm((p) => ({ ...p, sdlc_type: 'scrum' }))}

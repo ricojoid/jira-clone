@@ -42,7 +42,7 @@ export default function MomDetailModal({ open, onClose, mom, onEdit, onDelete })
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {/* Header Metadata Grid */}
         <div
-          className="card"
+          className="card m-stack"
           style={{
             padding: 16,
             backgroundColor: 'var(--bg-hover)',
@@ -104,7 +104,7 @@ export default function MomDetailModal({ open, onClose, mom, onEdit, onDelete })
         </div>
 
         {/* Report By & Attendance */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="card" style={{ padding: 16 }}>
             <h4
               style={{

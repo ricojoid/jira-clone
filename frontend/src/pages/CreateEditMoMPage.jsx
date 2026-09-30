@@ -184,7 +184,7 @@ export default function CreateEditMoMPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button
             className="btn btn-secondary btn-sm"
@@ -229,7 +229,7 @@ export default function CreateEditMoMPage() {
             General Information
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 18 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 18 }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                 Project <span style={{ color: '#ef4444' }}>*</span>
@@ -293,7 +293,7 @@ export default function CreateEditMoMPage() {
             Meeting & Report Details
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18 }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                 Meeting Date <span style={{ color: '#ef4444' }}>*</span>
@@ -332,7 +332,7 @@ export default function CreateEditMoMPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18 }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                 Meeting Place
@@ -374,7 +374,7 @@ export default function CreateEditMoMPage() {
             Reporter & Attendance
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-main)' }}>
                 Report By

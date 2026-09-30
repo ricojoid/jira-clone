@@ -213,7 +213,7 @@ export default function CreateEditMomModal({ open, onClose, momData = null, defa
         </div>
 
         {/* Meeting Date & Time Range */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Calendar size={14} /> Meeting Date <span style={{ color: '#ef4444' }}>*</span>
@@ -253,7 +253,7 @@ export default function CreateEditMomModal({ open, onClose, momData = null, defa
         </div>
 
         {/* Meeting Place & Report Date */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <MapPin size={14} /> Meeting Place
@@ -281,7 +281,7 @@ export default function CreateEditMomModal({ open, onClose, momData = null, defa
         </div>
 
         {/* Report By & Attendance */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
               <User size={14} /> Report By

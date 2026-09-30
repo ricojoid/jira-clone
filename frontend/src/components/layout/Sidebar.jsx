@@ -15,6 +15,7 @@ import {
   FileText,
   CalendarDays,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { projectApi } from '../../api';
 import Avatar from '../ui/Avatar';
@@ -91,7 +92,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
         borderRight: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'width 0.2s ease',
+        transition: 'width 0.32s cubic-bezier(0.22, 1, 0.36, 1), min-width 0.32s cubic-bezier(0.22, 1, 0.36, 1)',
+        overflow: 'hidden',
         zIndex: 100,
         position: 'sticky',
         top: 0,
@@ -108,10 +110,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
           borderBottom: '1px solid var(--border-light)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <motion.span
+            className="auth-logo-tile"
+            whileHover={{ rotate: -8, scale: 1.06 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+            style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, cursor: collapsed ? 'pointer' : 'default' }}
+            onClick={collapsed ? onToggleCollapse : undefined}
+          >
+            <img src="/Logo.png" alt="Logo" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+          </motion.span>
           {!collapsed && (
             <div>
-              <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-main)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
                 Jired
               </div>
             </div>
@@ -132,7 +143,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
       {/* Project Selector */}
       {!collapsed && (
         <div style={{ padding: '16px 16px 8px 16px' }}>
-          <label className="form-label" style={{ marginBottom: 6, display: 'block', fontSize: '0.75rem' }}>
+          <label className="form-label sidebar-section-label" style={{ marginBottom: 6, display: 'block', fontSize: '0.75rem' }}>
             ACTIVE PROJECT
           </label>
           <select
@@ -184,22 +195,21 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
                   navigate(item.path);
                 }
               }}
-              className="btn"
+              className={`btn nav-item${active ? ' nav-item-active' : ''}`}
               title={collapsed ? item.label : undefined}
               style={{
                 width: '100%',
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 marginBottom: 4,
-                backgroundColor: active ? '#dc2626' : 'transparent',
+                backgroundColor: 'transparent',
                 color: active ? '#ffffff' : 'var(--text-body)',
-                fontWeight: active ? 800 : 600,
-                border: active ? '1px solid #b91c1c' : '1px solid transparent',
-                boxShadow: active ? '0 2px 6px rgba(220, 38, 38, 0.3)' : 'none',
-                transition: 'all 0.15s ease',
+                fontWeight: active ? 700 : 600,
+                border: '1px solid transparent',
+                padding: '9px 12px',
               }}
             >
               <Icon size={18} style={{ color: active ? '#ffffff' : 'var(--text-muted)' }} />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>}
             </button>
           );
         })}
@@ -218,6 +228,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
       <div
         style={{
           padding: '16px',
+          margin: collapsed ? 0 : '0 10px 10px',
+          borderRadius: collapsed ? 0 : 'var(--radius-md)',
+          backgroundColor: collapsed ? 'transparent' : 'var(--bg-app)',
+          border: collapsed ? 'none' : '1px solid var(--border-color)',
           borderTop: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',

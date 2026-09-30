@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Settings, Menu } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
 import NotificationBell from './NotificationBell';
@@ -35,6 +36,7 @@ export default function TopBar({ onMobileMenuToggle }) {
 
   return (
     <header
+      className="topbar-glass"
       style={{
         height: 60,
         minHeight: 60,
@@ -63,11 +65,17 @@ export default function TopBar({ onMobileMenuToggle }) {
             display: 'flex',
             alignItems: 'center',
           }}
-          className="mobile-show"
+          className="mobile-show icon-btn"
           title="Toggle Navigation Menu"
         >
           <Menu size={22} color="var(--primary)" />
         </button>
+        <div className="mobile-show" style={{ alignItems: 'center', gap: 8 }}>
+          <img src="/Logo.png" alt="Logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+            Jired
+          </span>
+        </div>
       </div>
 
       {/* Actions & Profile */}
@@ -83,9 +91,14 @@ export default function TopBar({ onMobileMenuToggle }) {
             <Avatar name={user?.full_name || user?.username || user?.name} src={user?.avatar_url || user?.avatar} size={34} />
           </button>
 
+          <AnimatePresence>
           {menuOpen && (
-            <div
-              className="card"
+            <motion.div
+              className="card popover-surface"
+              initial={{ opacity: 0, y: -6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 34 }}
               style={{
                 position: 'absolute',
                 right: 0,
@@ -94,6 +107,8 @@ export default function TopBar({ onMobileMenuToggle }) {
                 padding: '8px 0',
                 zIndex: 200,
                 boxShadow: 'var(--shadow-xl)',
+                borderRadius: 14,
+                overflow: 'hidden',
               }}
             >
               <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light)' }}>
@@ -130,8 +145,9 @@ export default function TopBar({ onMobileMenuToggle }) {
                   Sign Out
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

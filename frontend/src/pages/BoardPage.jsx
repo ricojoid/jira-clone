@@ -278,7 +278,7 @@ export default function BoardPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', minHeight: 0, flex: 1 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>

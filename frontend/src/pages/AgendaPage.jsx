@@ -381,7 +381,7 @@ export default function AgendaPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 40 }}>
       {/* Header Banner */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             Project Agenda & Calendar
@@ -537,7 +537,7 @@ export default function AgendaPage() {
       </div>
 
       {/* Main Grid Layout: Calendar + Side Widgets */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
+      <div className="m-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, alignItems: 'start' }}>
         {/* Left Column: Calendar Grid or Schedule View */}
         <div style={{ minWidth: 0 }}>
           {viewMode === 'month' ? (
@@ -577,6 +577,7 @@ export default function AgendaPage() {
 
               {/* Day Cells Grid */}
               <div
+                className="agenda-calendar-grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
@@ -1284,7 +1285,7 @@ export default function AgendaPage() {
           </div>
 
           {/* Date & Time Range */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>
                 Date <span style={{ color: '#ef4444' }}>*</span>
@@ -1323,7 +1324,7 @@ export default function AgendaPage() {
           </div>
 
           {/* Category & Color Tag */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label" style={{ display: 'block', marginBottom: 6 }}>
                 Category
