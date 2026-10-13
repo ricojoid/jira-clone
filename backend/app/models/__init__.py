@@ -7,3 +7,4 @@ from app.models.notification import Notification
 from app.models.mom import Mom
 from app.models.agenda import Agenda
 
+from app.models.todo import Todo

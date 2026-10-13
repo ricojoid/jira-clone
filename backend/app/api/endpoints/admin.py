@@ -135,12 +135,14 @@ def admin_delete_user(
 
     from app.models.issue import Issue, Comment
     from app.models.project import ProjectMember
+    from app.models.todo import Todo
 
     # Safely detach foreign key references before deleting user
     db.query(Issue).filter(Issue.assignee_id == user_id).update({Issue.assignee_id: None})
     db.query(Issue).filter(Issue.reporter_id == user_id).update({Issue.reporter_id: None})
     db.query(ProjectMember).filter(ProjectMember.user_id == user_id).delete()
     db.query(Comment).filter(Comment.author_id == user_id).delete()
+    db.query(Todo).filter(Todo.user_id == user_id).delete()
 
     db.delete(target_user)
     db.commit()

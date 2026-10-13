@@ -14,6 +14,7 @@ import {
   Users,
   FileText,
   CalendarDays,
+  ListChecks,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -37,6 +38,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     { label: 'Phases / Sprints', icon: Zap, path: '/sprints' },
     { label: 'Issues', icon: CheckSquare, path: '/issues' },
     { label: 'Agenda', icon: CalendarDays, path: '/agenda' },
+    { label: 'To Do List', icon: ListChecks, path: '/todos' },
     { label: 'Minutes of Meeting', icon: FileText, path: '/mom' },
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
