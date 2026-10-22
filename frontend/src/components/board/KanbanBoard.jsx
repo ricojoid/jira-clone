@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   DndContext,
+  closestCenter,
   closestCorners,
+  pointerWithin,
   DragOverlay,
   MouseSensor,
   TouchSensor,
@@ -123,6 +125,31 @@ export default function KanbanBoard({
     [issuesByColumn, issueColumnMap]
   );
 
+  // Resolve the column under the pointer first, then the closest card inside it.
+  // Plain closestCorners picks cards from neighbouring columns because tall column rects have distant corners.
+  const collisionDetection = useCallback(
+    (args) => {
+      const columnKeys = new Set(Object.keys(issuesByColumn || {}));
+      const columnContainers = args.droppableContainers.filter((c) => columnKeys.has(String(c.id)));
+
+      let columnHit = pointerWithin({ ...args, droppableContainers: columnContainers })[0];
+      if (!columnHit) {
+        columnHit = closestCorners({ ...args, droppableContainers: columnContainers })[0];
+      }
+      if (!columnHit) return closestCorners(args);
+
+      const cardIds = new Set(
+        (issuesByColumn[columnHit.id] || []).map((i) => String(i.id || i._id))
+      );
+      const cardContainers = args.droppableContainers.filter((c) => cardIds.has(String(c.id)));
+      if (cardContainers.length === 0) return [columnHit];
+
+      const cardHit = closestCenter({ ...args, droppableContainers: cardContainers })[0];
+      return cardHit ? [cardHit] : [columnHit];
+    },
+    [issuesByColumn]
+  );
+
   const handleDragStart = useCallback(
     (event) => {
       const { active } = event;
@@ -191,7 +218,7 @@ export default function KanbanBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}

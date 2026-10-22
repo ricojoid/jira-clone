@@ -45,6 +45,7 @@ export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue 
 
   return (
     <div
+      ref={setNodeRef}
       className="card kanban-column"
       style={{
         width: 320,
@@ -116,7 +117,6 @@ export default function KanbanColumn({ column, issues, onIssueClick, onAddIssue 
       {/* Droppable Issue List */}
       <SortableContext items={issueIds} strategy={verticalListSortingStrategy}>
         <div
-          ref={setNodeRef}
           className="kanban-column-cards"
           style={{
             flex: 1,
