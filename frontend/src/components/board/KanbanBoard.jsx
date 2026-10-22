@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   DndContext,
   closestCorners,
@@ -184,24 +184,6 @@ export default function KanbanBoard({
     [findColumnForItem, issuesByColumn, columns, handleMove]
   );
 
-  const scrollContainerRef = useRef(null);
-
-  const handleWheel = (e) => {
-    if (scrollContainerRef.current && e.deltaY !== 0 && !e.shiftKey) {
-      const isTargetVerticallyScrollable = e.target.closest('.kanban-column-cards');
-      if (isTargetVerticallyScrollable) {
-        const { scrollTop, scrollHeight, clientHeight } = isTargetVerticallyScrollable;
-        const isScrollable = scrollHeight > clientHeight;
-        const atTop = scrollTop === 0 && e.deltaY < 0;
-        const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) <= 1 && e.deltaY > 0;
-        if (isScrollable && !atTop && !atBottom) {
-          return;
-        }
-      }
-      scrollContainerRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
   const handleDragCancel = useCallback(() => {
     setActiveIssue(null);
   }, []);
@@ -216,8 +198,6 @@ export default function KanbanBoard({
       measuring={measuringConfig}
     >
       <div
-        ref={scrollContainerRef}
-        onWheel={handleWheel}
         style={{
           width: '100%',
           height: '100%',
