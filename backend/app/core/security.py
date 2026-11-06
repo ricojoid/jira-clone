@@ -59,3 +59,11 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     return user
+
+
+ISTD_ROLE = "istd"
+
+
+def is_istd(user) -> bool:
+    """ISTD users: Board + MoM only, assigned projects only, own-items-only edits."""
+    return (getattr(user, "role", "") or "").lower() == ISTD_ROLE

@@ -8,7 +8,7 @@ import NotificationBell from './NotificationBell';
 
 export default function TopBar({ onMobileMenuToggle }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isISTD } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -121,6 +121,7 @@ export default function TopBar({ onMobileMenuToggle }) {
               </div>
 
               <div style={{ padding: '4px 0' }}>
+                {!isISTD && (
                 <button
                   className="btn btn-ghost"
                   onClick={handleProfile}
@@ -129,6 +130,7 @@ export default function TopBar({ onMobileMenuToggle }) {
                   <Settings size={16} />
                   Settings
                 </button>
+                )}
 
                 <button
                   className="btn btn-ghost"

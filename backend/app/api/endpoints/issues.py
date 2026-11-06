@@ -5,7 +5,7 @@ from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, is_istd
 from app.models.user import User
 from app.models.project import Project
 from app.models.issue import Issue, Label, Comment
@@ -69,6 +69,15 @@ def _has_project_access(user: User, project: Optional[Project], db: Session) -> 
         .first()
     )
     return member is not None
+
+
+def _ensure_istd_owns_issue(user: User, issue: Issue, action: str = "mengubah"):
+    """ISTD can only modify/move/delete issues they created (reporter)."""
+    if is_istd(user) and issue.reporter_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Role ISTD hanya dapat {action} task yang dibuat sendiri",
+        )
 
 
 @router.get("/project/{project_id}", response_model=List[IssueBrief])
@@ -319,6 +328,19 @@ def create_issue(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if is_istd(current_user):
+        project = db.query(Project).filter(Project.id == issue_data.project_id).first()
+        if not _has_project_access(current_user, project, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Anda tidak memiliki akses ke project ini",
+            )
+        if issue_data.parent_id:
+            parent = db.query(Issue).filter(Issue.id == issue_data.parent_id).first()
+            if not parent or parent.project_id != issue_data.project_id:
+                raise HTTPException(status_code=400, detail="Parent issue tidak valid")
+            _ensure_istd_owns_issue(current_user, parent, "menambah subtask ke")
+
     issue_key = _generate_issue_key(db, issue_data.project_id)
     target_status = issue_data.status or "todo"
 
@@ -373,6 +395,8 @@ def update_issue(
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
 
+    _ensure_istd_owns_issue(current_user, issue, "mengubah")
+
     update_data = issue_data.model_dump(exclude_unset=True)
 
     # Permission check for moving/changing card status
@@ -420,6 +444,8 @@ def move_issue(
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
+
+    _ensure_istd_owns_issue(current_user, issue, "memindahkan")
 
     user_role = (getattr(current_user, 'role', '') or '').lower()
     is_admin_or_pm = user_role in ["super_admin", "admin", "pm", "project_manager"]
@@ -514,6 +540,8 @@ def delete_issue(
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
+
+    _ensure_istd_owns_issue(current_user, issue, "menghapus")
 
     user_role = (getattr(current_user, "role", "") or "").lower()
     is_super_admin = user_role in ["super_admin", "super admin", "superadmin", "admin"]

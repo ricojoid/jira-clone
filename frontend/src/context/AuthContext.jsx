@@ -40,13 +40,14 @@ export function AuthProvider({ children }) {
   const roleLower = (user?.role || '').toLowerCase();
   const isSuperAdmin = ['super_admin', 'admin', 'super admin', 'superadmin'].includes(roleLower);
   const isPM = isSuperAdmin || roleLower === 'pm' || roleLower === 'project_manager';
+  const isISTD = roleLower === 'istd';
 
   const updateUser = (updatedUser) => {
     setUser(updatedUser);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, isPM, isSuperAdmin, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isPM, isSuperAdmin, isISTD, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

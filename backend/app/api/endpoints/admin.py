@@ -43,7 +43,7 @@ def admin_create_user(
     if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
 
-    valid_roles = ["super_admin", "pm", "member"]
+    valid_roles = ["super_admin", "pm", "member", "istd"]
     role = user_data.role if user_data.role in valid_roles else "member"
 
     user = User(
@@ -71,7 +71,7 @@ def admin_update_user_role(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    valid_roles = ["super_admin", "pm", "member"]
+    valid_roles = ["super_admin", "pm", "member", "istd"]
     if data.role not in valid_roles:
         raise HTTPException(status_code=400, detail="Invalid role specified")
 

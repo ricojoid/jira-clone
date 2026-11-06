@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, MessageSquare, UserCheck, Inbox, CalendarDays } from 'lucide-react';
 import { notificationApi } from '../../api';
 import Avatar from '../ui/Avatar';
+import { useAuth } from '../../context/AuthContext';
 import { useWebSocketNotification } from '../../hooks/useWebSocketNotification';
 
 export default function NotificationBell() {
@@ -12,6 +13,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const { isISTD } = useAuth();
 
   const handleRealtimeNotification = useCallback((newNotif) => {
     setUnreadCount((prev) => prev + 1);
@@ -80,6 +82,10 @@ export default function NotificationBell() {
       }
     }
     setIsOpen(false);
+    if (isISTD) {
+      // ISTD has no access to issue detail / agenda pages
+      return;
+    }
     if (notif.issue_id) {
       navigate(`/issue/${notif.issue_id}`);
     } else if (notif.type === 'agenda_assigned') {

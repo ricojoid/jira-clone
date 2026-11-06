@@ -26,7 +26,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams();
-  const { user, isPM, isSuperAdmin } = useAuth();
+  const { user, isPM, isSuperAdmin, isISTD } = useAuth();
 
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
@@ -43,9 +43,11 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
     { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
-  const navItems = isSuperAdmin
-    ? [...baseNavItems, { label: 'User Admin', icon: Users, path: '/admin/users' }]
-    : baseNavItems;
+  const navItems = isISTD
+    ? baseNavItems.filter((item) => ['/board', '/mom'].includes(item.path))
+    : isSuperAdmin
+      ? [...baseNavItems, { label: 'User Admin', icon: Users, path: '/admin/users' }]
+      : baseNavItems;
 
   useEffect(() => {
     if (projectId) {
@@ -265,7 +267,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, onCloseMobile }) 
                 <UserIcon size={12} color="var(--text-muted)" />
               )}
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                {isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager' : 'Member'}
+                {isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager' : isISTD ? 'ISTD' : 'Member'}
               </span>
             </div>
           </div>

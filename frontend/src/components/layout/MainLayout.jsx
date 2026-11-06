@@ -5,8 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 
+const ISTD_ALLOWED_PREFIXES = ['/board/', '/mom'];
+
 export default function MainLayout() {
-  const { user, loading } = useAuth();
+  const { user, loading, isISTD } = useAuth();
   const location = useLocation();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -54,6 +56,11 @@ export default function MainLayout() {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // ISTD role: only Board and Minutes of Meeting are accessible
+  if (isISTD && !ISTD_ALLOWED_PREFIXES.some((p) => location.pathname.startsWith(p))) {
+    return <Navigate to="/mom" replace />;
   }
 
   return (

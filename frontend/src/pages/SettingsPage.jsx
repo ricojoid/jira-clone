@@ -7,7 +7,7 @@ import Button from '../components/ui/Button';
 import Avatar from '../components/ui/Avatar';
 
 export default function SettingsPage() {
-  const { user, isSuperAdmin, isPM, updateUser } = useAuth();
+  const { user, isSuperAdmin, isPM, isISTD, updateUser } = useAuth();
   const [profile, setProfile] = useState({
     full_name: user?.full_name || '',
     avatar_url: user?.avatar_url || '',
@@ -84,7 +84,7 @@ export default function SettingsPage() {
     }
   };
 
-  const roleText = isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager (PM)' : 'Team Member';
+  const roleText = isSuperAdmin ? 'Super Admin' : isPM ? 'Project Manager (PM)' : isISTD ? 'ISTD' : 'Team Member';
   const avatarUrl = profile.avatar_url || user?.avatar_url || user?.avatar;
 
   return (

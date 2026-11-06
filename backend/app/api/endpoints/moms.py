@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, is_istd
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.mom import Mom
@@ -32,6 +32,10 @@ def _remove_attachment_file(attachment_url: Optional[str]):
 
 
 def _can_edit_or_delete_mom(mom: Mom, current_user: User, db: Session) -> bool:
+    # ISTD: strictly only MoMs they created, regardless of project membership role
+    if is_istd(current_user):
+        return mom.created_by_id == current_user.id
+
     user_role = (getattr(current_user, "role", "") or "").lower()
     if user_role in ["super_admin", "super admin", "admin", "pm"]:
         return True

@@ -15,7 +15,7 @@ import { formatDateForDateInput } from '../../utils/deadline';
 
 export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
   const navigate = useNavigate();
-  const { user, isPM, isSuperAdmin } = useAuth();
+  const { user, isPM, isSuperAdmin, isISTD } = useAuth();
 
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,14 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
     return resolvedIds;
   };
 
+  // ISTD can only edit tasks they created
+  const canEdit = !isISTD || Boolean(user && issue && user.id === issue.reporter_id);
+
   const updateField = async (field, value) => {
+    if (!canEdit) {
+      toast.error('ISTD hanya dapat mengubah task yang dibuat sendiri');
+      return;
+    }
     try {
       let apiField = field === 'type' ? 'issue_type' : field;
       let apiValue = value;
@@ -180,7 +187,9 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
     }
   };
 
-  const canDelete = isPM || isSuperAdmin || (user && issue && (user.id === issue.reporter_id || user.id === issue.project?.owner_id));
+  const canDelete = isISTD
+    ? canEdit
+    : isPM || isSuperAdmin || (user && issue && (user.id === issue.reporter_id || user.id === issue.project?.owner_id));
 
   const handleDelete = async () => {
     if (!canDelete) {
@@ -260,12 +269,12 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 />
               ) : (
                 <h2
-                  onClick={() => setEditingTitle(true)}
+                  onClick={() => canEdit && setEditingTitle(true)}
                   style={{
                     fontSize: '1.25rem',
                     fontWeight: 700,
                     color: 'var(--text-main)',
-                    cursor: 'pointer',
+                    cursor: canEdit ? 'pointer' : 'default',
                     padding: '4px 8px',
                     borderRadius: 'var(--radius-sm)',
                     transition: 'background 0.15s',
@@ -281,7 +290,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
             <div className="card" style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h4 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Description</h4>
-                {!editingDesc && (
+                {!editingDesc && canEdit && (
                   <Button variant="ghost" size="sm" icon={Edit2} onClick={() => setEditingDesc(true)}>
                     Edit
                   </Button>
@@ -308,7 +317,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 </div>
               ) : (
                 <div
-                  onClick={() => setEditingDesc(true)}
+                  onClick={() => canEdit && setEditingDesc(true)}
                   style={{
                     padding: 12,
                     borderRadius: 'var(--radius-md)',
@@ -338,9 +347,11 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                     </span>
                   )}
                 </div>
-                <Button variant="outline" size="sm" icon={Plus} onClick={() => setSubtaskDialogOpen(true)}>
-                  {issue.issue_type === 'epic' ? 'Add Issue' : 'Add Subtask'}
-                </Button>
+                {canEdit && (
+                  <Button variant="outline" size="sm" icon={Plus} onClick={() => setSubtaskDialogOpen(true)}>
+                    {issue.issue_type === 'epic' ? 'Add Issue' : 'Add Subtask'}
+                  </Button>
+                )}
               </div>
 
               {subtasks.length > 0 ? (
@@ -509,6 +520,11 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 Attributes
               </h4>
 
+              <fieldset
+                disabled={!canEdit}
+                style={{ border: 0, padding: 0, margin: 0, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+
               <div className="form-group">
                 <label className="form-label">Status</label>
                 <select className="form-select" value={issue.status || 'todo'} onChange={(e) => updateField('status', e.target.value)}>
@@ -624,7 +640,10 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 />
               </div>
 
+              </fieldset>
+
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                {!isISTD && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -637,6 +656,7 @@ export default function TaskDetailModal({ issueId, open, onClose, onUpdated }) {
                 >
                   Full View
                 </Button>
+                )}
                 {canDelete && (
                   <Button variant="danger" size="sm" icon={Trash2} onClick={handleDelete}>
                     Delete

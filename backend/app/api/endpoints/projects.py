@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, is_istd
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.board import Board, BoardColumn
@@ -129,6 +129,17 @@ def get_project(
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    if is_istd(current_user) and project.owner_id != current_user.id:
+        is_member = (
+            db.query(ProjectMember)
+            .filter(
+                ProjectMember.project_id == project_id,
+                ProjectMember.user_id == current_user.id,
+            )
+            .first()
+        )
+        if not is_member:
+            raise HTTPException(status_code=403, detail="Anda tidak memiliki akses ke project ini")
     return project
 
 

@@ -25,7 +25,7 @@ const DEFAULT_COLUMNS = [
 
 export default function BoardPage() {
   const { projectId } = useParams();
-  const { isPM, user } = useAuth();
+  const { isPM, isISTD, user } = useAuth();
 
   const [project, setProject] = useState(null);
   const [board, setBoard] = useState(null);
@@ -50,11 +50,11 @@ export default function BoardPage() {
   useEffect(() => {
     if (user && !defaultFilterSet.current) {
       defaultFilterSet.current = true;
-      if (!isPM) {
+      if (!isPM && !isISTD) {
         setFilterAssignee(String(user.id));
       }
     }
-  }, [user, isPM]);
+  }, [user, isPM, isISTD]);
 
   // Modals
   const [selectedIssueId, setSelectedIssueId] = useState(null);
@@ -183,6 +183,13 @@ export default function BoardPage() {
   }, [issues, filterDueDateFrom, filterDueDateTo]);
 
   const handleIssueMove = async (issueId, targetStatus, newIndex) => {
+    if (isISTD) {
+      const moving = issues.find((i) => (i.id || i._id) === issueId);
+      if (moving && moving.reporter_id !== user?.id) {
+        toast.error('ISTD hanya dapat memindahkan task yang dibuat sendiri');
+        return;
+      }
+    }
     setIssues((prev) => {
       const cloned = [...prev];
       const targetIdx = cloned.findIndex((i) => (i.id || i._id) === issueId);

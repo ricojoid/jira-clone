@@ -250,6 +250,8 @@ export default function AdminUserManagementPage() {
         return { bg: '#dc2626', color: '#ffffff', border: '#b91c1c', label: 'Super Admin' };
       case 'pm':
         return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca', label: 'Project Manager' };
+      case 'istd':
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe', label: 'ISTD' };
       default:
         return { bg: '#f4f4f5', color: '#71717a', border: '#e4e4e7', label: 'Member' };
     }
@@ -365,6 +367,7 @@ export default function AdminUserManagementPage() {
                         <option value="super_admin" style={{ backgroundColor: '#ffffff', color: '#18181b' }}>Super Admin</option>
                         <option value="pm" style={{ backgroundColor: '#ffffff', color: '#18181b' }}>Project Manager</option>
                         <option value="member" style={{ backgroundColor: '#ffffff', color: '#18181b' }}>Member</option>
+                        <option value="istd" style={{ backgroundColor: '#ffffff', color: '#18181b' }}>ISTD</option>
                       </select>
                     </td>
 
@@ -478,6 +481,7 @@ export default function AdminUserManagementPage() {
               onChange={(e) => setRegisterForm((p) => ({ ...p, role: e.target.value }))}
             >
               <option value="member">Member (Standard Team Member)</option>
+              <option value="istd">ISTD (Board &amp; MoM only, own items)</option>
               <option value="pm">Project Manager (PM - Full Workspace Access)</option>
               <option value="super_admin">Super Admin (System Management Privileges)</option>
             </select>
